@@ -449,7 +449,7 @@ def find_available_port(start_port: int = 7860, max_tries: int = 50) -> int:
     return start_port
 
 
-def launch_web(port: int = 7860, share: bool = False):
+def launch_web(port: int = 7860, share: bool = False, three_plane: bool = True):
     import sys
     if sys.platform == "win32":
         try:
@@ -460,20 +460,26 @@ def launch_web(port: int = 7860, share: bool = False):
     config = PrivearchConfig()
     kernel = PrivearchKernel(config)
     st = kernel.get_system_status()
-    print(f"[OK] Privearch Web UI initialized with {st['indexed_chunks']} chunks across {st['indexed_documents']} chemistry PDFs.")
+    print(f"[OK] Privearch OS initialized with {st['indexed_chunks']} chunks across {st['indexed_documents']} chemistry PDFs.")
 
     # Find next available port to prevent OSError if 7860 is busy
     initial_port = int(os.getenv("GRADIO_SERVER_PORT", str(port)))
     target_port = find_available_port(initial_port)
-    print(f"[INFO] Launching Privearch Web Dashboard on: http://127.0.0.1:{target_port}")
+    print(f"[INFO] Launching Privearch Three-Plane Research Operating Environment on: http://127.0.0.1:{target_port}")
 
-    demo = build_app(kernel)
+    if three_plane:
+        from privearch.ui.three_plane_app import build_three_plane_app
+        demo = build_three_plane_app(kernel)
+    else:
+        demo = build_app(kernel)
+
     try:
         demo.launch(server_name="127.0.0.1", server_port=target_port, share=share)
     except OSError:
         fallback_port = find_available_port(target_port + 1)
         print(f"[WARN] Port {target_port} was occupied, redirecting to: http://127.0.0.1:{fallback_port}")
         demo.launch(server_name="127.0.0.1", server_port=fallback_port, share=share)
+
 
 
 if __name__ == "__main__":

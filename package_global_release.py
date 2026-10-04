@@ -108,17 +108,18 @@ def build_global_release():
         "channel": "stable",
         "min_compatible_version": "1.0.0",
         "changelog": (
-            "### Privearch v1.1.0 Release - Deterministic Scientific Compute & Tool Graph Bus\n"
+            "### Privearch v1.2.0 Release - Three-Plane Operating Environment & Explainer Canvas\n"
+            "- Three-Plane Research Workstation: Left (Chat & Intent), Center (Explainer Canvas), Right (Media & Vault), Bottom (Execution Console)\n"
+            "- Explainer Canvas: Interactive Plotly scientific curves, step-by-step KaTeX derivations, real-time HTML5 particle simulation, adversarial claims inspector\n"
+            "- Execution Console: Live terminal-like logs, model latency, memory telemetry, and Run/Stop/Rebuild controls\n"
             "- Deterministic Scientific Compute: Non-hallucinatory SymPy and NumPy mathematical solver\n"
-            "- Tool Graph Architecture: Extensible BaseToolAdapter and PythonSandboxAdapter\n"
-            "- AST Security Auditor: Sandboxed Python execution with timeout and process protection\n"
-            "- Equation & Variable Parser: Extracts LaTeX formulas and units from queries and literature\n"
-            "- Adversarial Mathematical Claim Auditing: Verifies predicted numbers against exact computed truth\n"
-            "- Artifact Registry & Provenance Ledger: Complete backward provenance tracking (Paper -> Equation -> Code -> Artifact)\n"
+            "- Tool Graph Architecture: Extensible BaseToolAdapter and PythonSandboxAdapter with AST security auditing\n"
+            "- Artifact Registry & Provenance Ledger: Complete backward provenance tracking\n"
             "- Dual-Model Brain-Trust (0.5B Router + 4B Synthesizer + 0.5B Verifier)\n"
             "- 100% Local Airgap (Zero Cloud Compute, CPU embeddings + 4GB VRAM)"
         ),
         "download_url": f"https://github.com/pranav520214/Privreach/releases/download/v{VERSION}/privearch-ota-v{VERSION}.zip",
+
 
         "sha256": ota_sha
     }
