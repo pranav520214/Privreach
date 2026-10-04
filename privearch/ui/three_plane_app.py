@@ -123,6 +123,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
                 "### 📐 Derivation Canvas\n*Submit a query to generate mathematical derivations.*",
                 CanvasGenerator.generate_particle_simulation_html(300, 1.0),
                 [],
+                CanvasGenerator.generate_multimodal_timeline_markdown([]),
                 "No query provided.",
                 "Ready.",
                 "*No artifacts generated.*",
@@ -178,6 +179,9 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         sim_p = known_vars.get("P", 101325.0) / 101325.0 if "P" in known_vars else 1.0
         sim_html = CanvasGenerator.generate_particle_simulation_html(temperature=sim_t, pressure=sim_p)
 
+        # Multimodal Media Timeline
+        timeline_md = CanvasGenerator.generate_multimodal_timeline_markdown(report.retrieved_chunks)
+
         # Claims Table
         claims_data = []
         for c in audit.claims:
@@ -196,10 +200,18 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         # 5. Right Media Plane Data
         passages_md = [f"### 🔍 Retrieved Evidence (Top {len(report.retrieved_chunks)})"]
         for sc in report.retrieved_chunks:
+            c = sc.chunk
+            ev_type = getattr(c, "evidence_type", "DOCUMENT_PAGE")
+            if ev_type in ("VIDEO_TIMECODE", "AUDIO_TRANSCRIPT"):
+                sub_header = f"[{sc.final_rank}] 🎬 {c.doc_name} ({c.section_header})"
+                if getattr(c, "speaker_id", None):
+                    sub_header += f" - {c.speaker_id}"
+            else:
+                sub_header = f"[{sc.final_rank}] 📄 {c.doc_name} (Page {c.page_num})"
             passages_md.append(
-                f"**[{sc.final_rank}] {sc.chunk.doc_name} (Page {sc.chunk.page_num})**  \n"
+                f"**{sub_header}**  \n"
                 f"*RRF Score: {sc.rrf_score:.4f} | BM25: #{sc.bm25_rank or '-'} | FAISS: #{sc.dense_rank or '-'}*  \n"
-                f"> {sc.chunk.text}\n"
+                f"> {c.text}\n"
             )
         passages_text = "\n\n---\n\n".join(passages_md)
 
@@ -233,6 +245,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             derivation_md,
             sim_html,
             claims_data,
+            timeline_md,
             router_text,
             f"Grounding Score: **{audit.grounding_score}%** | Verdict: `{audit.overall_verdict}`",
             artifacts_text,
@@ -246,12 +259,13 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             return "No files dropped.", "Ready."
         msgs = []
         for f in files:
-            res = kernel.ingest_pdf(f.name)
-            msgs.append(f"• {res['doc_name']}: {res['chunks']} chunks ({res['time_s']}s)")
+            res = kernel.ingest_media(f.name)
+            type_tag = res.get("type", "document")
+            msgs.append(f"• [{type_tag.upper()}] {res['doc_name']}: {res['chunks']} chunks ({res['time_s']}s)")
         kernel.save_index()
         status = kernel.get_system_status()
-        summary = f"**Ingested {len(files)} file(s):**\n" + "\n".join(msgs)
-        vault_status = f"**Vault Total:** {status['indexed_chunks']} chunks across {status['indexed_documents']} documents in RAM."
+        summary = f"**Ingested {len(files)} media file(s):**\n" + "\n".join(msgs)
+        vault_status = f"**Vault Total:** {status['indexed_chunks']} chunks across {status['indexed_documents']} media files in RAM."
         return summary, vault_status
 
     # -------------------------------------------------------------
@@ -359,6 +373,9 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
                             interactive=False
                         )
 
+                    with gr.TabItem("🎥 Multimodal Timeline & Transcripts"):
+                        canvas_multimodal = gr.Markdown(CanvasGenerator.generate_multimodal_timeline_markdown([]))
+
             # =====================================================
             # PLANE 3 (RIGHT): MEDIA & EVIDENCE VAULT (25%)
             # =====================================================
@@ -366,8 +383,8 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
                 gr.HTML("<div class='plane-header'>📁 MEDIA & EVIDENCE VAULT</div>")
 
                 media_dropzone = gr.File(
-                    label="Drop PDFs, Audio, Video, Datasets",
-                    file_types=[".pdf", ".mp4", ".wav", ".mp3", ".csv"],
+                    label="Drop PDFs, Audio, Video, Transcripts",
+                    file_types=[".pdf", ".mp4", ".mkv", ".mov", ".wav", ".mp3", ".m4a", ".vtt", ".srt", ".csv"],
                     file_count="multiple",
                     height=90
                 )
@@ -417,6 +434,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             canvas_derivation,
             canvas_simulation,
             canvas_claims_table,
+            canvas_multimodal,
             router_card,
             canvas_status_banner,
             artifacts_box,
@@ -441,7 +459,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         )
 
         clear_btn.click(
-            lambda: ([], "", CanvasGenerator.generate_scientific_plot("", "V", {}), "Derivations cleared.", CanvasGenerator.generate_particle_simulation_html(300, 1.0), [], "Cleared.", "Idle", "*Cleared*", "*Cleared*", "[CONSOLE] Cleared."),
+            lambda: ([], "", CanvasGenerator.generate_scientific_plot("", "V", {}), "Derivations cleared.", CanvasGenerator.generate_particle_simulation_html(300, 1.0), [], CanvasGenerator.generate_multimodal_timeline_markdown([]), "Cleared.", "Idle", "*Cleared*", "*Cleared*", "[CONSOLE] Cleared."),
             outputs=run_outputs
         )
 

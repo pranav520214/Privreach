@@ -1,9 +1,9 @@
 {
-  "version": "1.2.0",
+  "version": "1.3.0",
   "release_date": "2026-10-04",
   "channel": "stable",
   "min_compatible_version": "1.0.0",
   "changelog": "### Privearch v1.2.0 Release - Three-Plane Operating Environment & Explainer Canvas\n- Three-Plane Research Workstation: Left (Chat & Intent), Center (Explainer Canvas), Right (Media & Vault), Bottom (Execution Console)\n- Explainer Canvas: Interactive Plotly scientific curves, step-by-step KaTeX derivations, real-time HTML5 particle simulation, adversarial claims inspector\n- Execution Console: Live terminal-like logs, model latency, memory telemetry, and Run/Stop/Rebuild controls\n- Deterministic Scientific Compute: Non-hallucinatory SymPy and NumPy mathematical solver\n- Tool Graph Architecture: Extensible BaseToolAdapter and PythonSandboxAdapter with AST security auditing\n- Artifact Registry & Provenance Ledger: Complete backward provenance tracking\n- Dual-Model Brain-Trust (0.5B Router + 4B Synthesizer + 0.5B Verifier)\n- 100% Local Airgap (Zero Cloud Compute, CPU embeddings + 4GB VRAM)",
-  "download_url": "https://github.com/pranav520214/Privreach/releases/download/v1.2.0/privearch-ota-v1.2.0.zip",
-  "sha256": "c775026e7b02bbfb3c8b90943fb49d2764312a1ad30e5e3443f67f11dc8f1e93"
+  "download_url": "https://github.com/pranav520214/Privreach/releases/download/v1.3.0/privearch-ota-v1.3.0.zip",
+  "sha256": "ededffa2fb7cbaa3244a6f2bc719550351ed1f073c2c6d74a2a34a9d371ce816"
 }

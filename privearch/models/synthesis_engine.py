@@ -43,9 +43,17 @@ class SynthesisEngine:
         passages_text = []
         for i, sc in enumerate(retrieved_chunks, start=1):
             c = sc.chunk
-            header = f"[{i}] Document: {c.doc_name} | Page: {c.page_num}"
-            if c.section_header:
-                header += f" | Section: {c.section_header}"
+            ev_type = getattr(c, "evidence_type", "DOCUMENT_PAGE")
+            if ev_type in ("VIDEO_TIMECODE", "AUDIO_TRANSCRIPT"):
+                header = f"[{i}] Media: {c.doc_name} | Type: {ev_type}"
+                if c.section_header:
+                    header += f" | Timecode: {c.section_header}"
+                if getattr(c, "speaker_id", None):
+                    header += f" | Speaker: {c.speaker_id}"
+            else:
+                header = f"[{i}] Document: {c.doc_name} | Page: {c.page_num}"
+                if c.section_header:
+                    header += f" | Section: {c.section_header}"
             passages_text.append(f"{header}\n\"\"\"\n{c.text}\n\"\"\"")
 
         context_block = "\n\n".join(passages_text)

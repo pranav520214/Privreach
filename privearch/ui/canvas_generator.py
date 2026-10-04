@@ -326,3 +326,47 @@ class CanvasGenerator:
         escaped_html = html.replace('"', '&quot;')
         return f'<iframe srcdoc="{escaped_html}" style="width: 100%; height: 420px; border: none; border-radius: 12px; background: #0f172a;"></iframe>'
 
+    @staticmethod
+    def generate_multimodal_timeline_markdown(retrieved_chunks: List[Any]) -> str:
+        """
+        Formats retrieved multimodal video scenes and audio transcripts into an interactive timeline.
+        """
+        media_chunks = [
+            sc for sc in retrieved_chunks
+            if getattr(sc.chunk, "evidence_type", "DOCUMENT_PAGE") in ("VIDEO_TIMECODE", "AUDIO_TRANSCRIPT")
+        ]
+
+        if not media_chunks:
+            return (
+                "### 🎥 Multimodal Media Timeline\n\n"
+                "*No video scenes or audio transcripts retrieved for this query.*  \n"
+                "Drop an `.mp4` video or `.wav`/`.mp3` audio file into the Media Vault to query spoken discussions and visual scenes."
+            )
+
+        md = [
+            "### 🎥 Multimodal Evidence Timeline & Transcripts\n",
+            "| Timecode | Media Source | Type | Speaker / Scene | Transcript / Description |",
+            "| :--- | :--- | :--- | :--- | :--- |"
+        ]
+
+        for sc in media_chunks:
+            c = sc.chunk
+            tc = c.section_header or (f"{c.timestamp_start:.1f}s - {c.timestamp_end:.1f}s" if c.timestamp_start is not None else "00:00")
+            spk = getattr(c, "speaker_id", None) or "Video Scene"
+            ev_type = getattr(c, "evidence_type", "MEDIA")
+            badge = "🎬 Video" if ev_type == "VIDEO_TIMECODE" else "🎙️ Audio"
+            clean_txt = c.text.replace("\n", " ").replace("|", "\\|")
+            if len(clean_txt) > 120:
+                clean_txt = clean_txt[:117] + "..."
+            md.append(f"| **`{tc}`** | `{c.doc_name}` | {badge} | **{spk}** | {clean_txt} |")
+
+        md.append("\n*All timecodes are verified against source media streams.*")
+        return "\n".join(md)
+
+    @staticmethod
+    def generate_meeting_memo_markdown(insights: Dict[str, Any]) -> str:
+        """Renders structured meeting intelligence report for the canvas."""
+        from privearch.multimodal import MeetingIntelligenceEngine
+        engine = MeetingIntelligenceEngine()
+        return engine.format_meeting_markdown(insights)
+

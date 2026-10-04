@@ -58,14 +58,19 @@ class QueryAnalysis(BaseModel):
 
 
 class DocumentChunk(BaseModel):
-    """A semantic fragment of an ingested scientific PDF."""
+    """A semantic fragment of an ingested scientific PDF, video timecode, or audio transcript."""
     chunk_id: str
     doc_name: str
-    page_num: int
+    page_num: int = 1
     section_header: str = ""
     text: str
     char_count: int = 0
     word_count: int = 0
+    evidence_type: str = "DOCUMENT_PAGE"
+    timestamp_start: Optional[float] = None
+    timestamp_end: Optional[float] = None
+    speaker_id: Optional[str] = None
+    media_path: Optional[str] = None
 
 
 class ScoredChunk(BaseModel):
@@ -116,6 +121,23 @@ class EvidenceChunk(BaseModel):
     speaker_id: Optional[str] = None
     text: str
     metadata: Dict[str, Any] = Field(default_factory=dict)
+
+    def to_document_chunk(self) -> DocumentChunk:
+        ev_type = self.evidence_type.value if hasattr(self.evidence_type, "value") else str(self.evidence_type)
+        return DocumentChunk(
+            chunk_id=self.chunk_id,
+            doc_name=self.source_name,
+            page_num=self.page_num or 1,
+            section_header=self.metadata.get("timecode_range") or self.metadata.get("speaker") or "",
+            text=self.text,
+            char_count=len(self.text),
+            word_count=len(self.text.split()),
+            evidence_type=ev_type,
+            timestamp_start=self.timestamp_start,
+            timestamp_end=self.timestamp_end,
+            speaker_id=self.speaker_id,
+            media_path=self.metadata.get("video_path") or self.metadata.get("audio_path") or self.metadata.get("image_path")
+        )
 
 
 class ToolCallRequest(BaseModel):

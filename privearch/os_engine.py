@@ -31,6 +31,7 @@ from privearch.models.adversarial_verifier import AdversarialVerifier
 from privearch.tools import ToolGraph
 from privearch.compute import DeterministicSolver, EquationParser
 from privearch.artifacts import ArtifactRegistry
+from privearch.multimodal import VideoProcessor, AudioProcessor, MeetingIntelligenceEngine
 
 
 
@@ -82,6 +83,11 @@ class PrivearchKernel:
         self.tool_graph = ToolGraph()
         self.solver = DeterministicSolver(sandbox=self.tool_graph.get("python_sandbox"))
         self.artifact_registry = ArtifactRegistry()
+
+        # 5. Multimodal Ingestion & Meeting Intelligence Engines
+        self.video_processor = VideoProcessor()
+        self.audio_processor = AudioProcessor()
+        self.meeting_engine = MeetingIntelligenceEngine(audio_processor=self.audio_processor)
 
         # Ingestion state tracking
         self.ingested_files: List[Dict[str, Any]] = []
@@ -240,6 +246,203 @@ class PrivearchKernel:
         # Persist index cache once after all files are processed
         self.save_index()
         return results
+
+    def ingest_video(
+        self,
+        video_path: str,
+        interval_seconds: float = 15.0,
+        force: bool = False,
+        auto_save: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Dynamically ingest a scientific video file:
+        FFprobe metadata -> Keyframe extraction -> Audio track separation -> Audio transcription (Whisper) ->
+        Unified timeline chunks -> CPU embedding -> In-RAM BM25 & FAISS indexing.
+        """
+        abs_path = os.path.abspath(video_path)
+        doc_name = os.path.basename(video_path)
+        if not force:
+            for f in self.ingested_files:
+                if f.get("path") == abs_path or f.get("doc_name") == doc_name:
+                    return {
+                        "status": "already_indexed",
+                        "doc_name": doc_name,
+                        "type": "video",
+                        "chunks": f.get("chunks", 0),
+                        "total_ram_chunks": self.total_chunks,
+                        "time_s": 0.0
+                    }
+        t0 = time.time()
+        # 1. Video Probe & Keyframe Timeline
+        evidence_chunks = self.video_processor.build_video_evidence_chunks(video_path, interval_seconds=interval_seconds)
+
+        # 2. Extract & Transcribe Audio (if audio track exists)
+        audio_wav = self.video_processor.extract_audio(video_path)
+        if audio_wav:
+            audio_chunks = self.audio_processor.build_audio_evidence_chunks(audio_wav)
+            for ac in audio_chunks:
+                ac.source_name = doc_name
+            evidence_chunks.extend(audio_chunks)
+
+        if not evidence_chunks:
+            return {"status": "empty", "doc_name": doc_name, "chunks": 0, "time_s": round(time.time() - t0, 3)}
+
+        # 3. Convert to DocumentChunks
+        new_doc_chunks = [c.to_document_chunk() for c in evidence_chunks]
+
+        # 4. CPU Vectorization & In-RAM Indexing
+        chunk_texts = [c.text for c in new_doc_chunks]
+        vectors = self.embedding_engine.embed_documents(chunk_texts)
+
+        self.bm25.add_chunks(new_doc_chunks)
+        self.vector_index.add_vectors(vectors, new_doc_chunks)
+
+        self.total_chunks += len(new_doc_chunks)
+        meta = self.video_processor.probe(video_path)
+        self.ingested_files.append({
+            "doc_name": doc_name,
+            "path": abs_path,
+            "type": "video",
+            "duration": meta.get("duration_formatted", ""),
+            "resolution": meta.get("resolution", ""),
+            "chunks": len(new_doc_chunks)
+        })
+
+        elapsed = round(time.time() - t0, 3)
+        if auto_save:
+            self.save_index()
+
+        return {
+            "status": "success",
+            "doc_name": doc_name,
+            "type": "video",
+            "chunks": len(new_doc_chunks),
+            "total_ram_chunks": self.total_chunks,
+            "time_s": elapsed
+        }
+
+    def ingest_audio(
+        self,
+        audio_path: str,
+        force: bool = False,
+        auto_save: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Dynamically ingest a spoken research audio file:
+        Local Faster-Whisper transcription -> Timestamped speaker segments ->
+        Unified audio evidence chunks -> CPU embedding -> In-RAM BM25 & FAISS indexing.
+        """
+        abs_path = os.path.abspath(audio_path)
+        doc_name = os.path.basename(audio_path)
+        if not force:
+            for f in self.ingested_files:
+                if f.get("path") == abs_path or f.get("doc_name") == doc_name:
+                    return {
+                        "status": "already_indexed",
+                        "doc_name": doc_name,
+                        "type": "audio",
+                        "chunks": f.get("chunks", 0),
+                        "total_ram_chunks": self.total_chunks,
+                        "time_s": 0.0
+                    }
+        t0 = time.time()
+        # 1. Transcribe & Segment
+        segments = self.audio_processor.transcribe(audio_path)
+        if not segments:
+            return {"status": "empty", "doc_name": doc_name, "chunks": 0, "time_s": round(time.time() - t0, 3)}
+
+        # 2. Build Audio Evidence Chunks
+        evidence_chunks = self.audio_processor.build_audio_evidence_chunks(audio_path, segments=segments)
+        new_doc_chunks = [c.to_document_chunk() for c in evidence_chunks]
+
+        # 3. CPU Vectorization & Indexing
+        chunk_texts = [c.text for c in new_doc_chunks]
+        vectors = self.embedding_engine.embed_documents(chunk_texts)
+
+        self.bm25.add_chunks(new_doc_chunks)
+        self.vector_index.add_vectors(vectors, new_doc_chunks)
+
+        self.total_chunks += len(new_doc_chunks)
+        self.ingested_files.append({
+            "doc_name": doc_name,
+            "path": abs_path,
+            "type": "audio",
+            "segments": len(segments),
+            "chunks": len(new_doc_chunks)
+        })
+
+        elapsed = round(time.time() - t0, 3)
+        if auto_save:
+            self.save_index()
+
+        return {
+            "status": "success",
+            "doc_name": doc_name,
+            "type": "audio",
+            "chunks": len(new_doc_chunks),
+            "total_ram_chunks": self.total_chunks,
+            "time_s": elapsed
+        }
+
+    def process_meeting(
+        self,
+        audio_path: str,
+        title: str = "Research Lab Meeting",
+        auto_save: bool = True
+    ) -> Dict[str, Any]:
+        """
+        End-to-end Academic Meeting Intelligence:
+        Transcribe -> Diarize speaker turns -> Extract consensus decisions, hypotheses, and action items ->
+        Generate Laboratory Memo artifact -> Index transcript into RAM hybrid retriever.
+        """
+        ingest_res = self.ingest_audio(audio_path, auto_save=auto_save)
+        raw_segs = self.audio_processor.transcribe(audio_path)
+        diarized = self.meeting_engine.diarize_segments(raw_segs)
+        insights = self.meeting_engine.extract_meeting_insights(diarized, title=title)
+        memo_md = self.meeting_engine.format_meeting_markdown(insights)
+
+        from privearch.schemas import ArtifactType
+        doc_name = os.path.basename(audio_path)
+        artifact = self.artifact_registry.register_artifact(
+            name=f"Meeting Memo: {title}",
+            artifact_type=ArtifactType.MARKDOWN_REPORT,
+            content=memo_md,
+            provenance={"source_doc": doc_name, "meeting_title": title, "speakers": insights["speakers"]},
+            description=f"Automated meeting intelligence memo with decisions and action items for {title}."
+        )
+
+        return {
+            "status": "success",
+            "title": title,
+            "artifact_id": artifact.artifact_id,
+            "insights": insights,
+            "markdown_memo": memo_md,
+            "chunks_indexed": ingest_res.get("chunks", 0)
+        }
+
+    def ingest_media(
+        self,
+        media_path: str,
+        force: bool = False,
+        auto_save: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Universal Multimodal Dropzone Ingestor:
+        Routes PDFs, Videos, Audio recordings, and Transcripts to the appropriate ingestion engine.
+        """
+        ext = os.path.splitext(media_path)[1].lower()
+        if ext == ".pdf":
+            return self.ingest_pdf(media_path, force=force, auto_save=auto_save)
+        elif ext in (".mp4", ".mkv", ".mov", ".avi", ".webm"):
+            return self.ingest_video(media_path, force=force, auto_save=auto_save)
+        elif ext in (".wav", ".mp3", ".m4a", ".flac", ".ogg", ".vtt", ".srt"):
+            return self.ingest_audio(media_path, force=force, auto_save=auto_save)
+        else:
+            return {
+                "status": "unsupported",
+                "doc_name": os.path.basename(media_path),
+                "error": f"Unsupported media format: {ext}"
+            }
 
     def execute_rlcd(self, query: str) -> PrivearchReport:
         """
