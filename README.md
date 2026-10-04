@@ -29,6 +29,7 @@ Standard AI chatbots guess the next word. In science, medicine, and engineering,
 
 ## 🏗️ The RLCD Architecture
 
+
 ```
 [ User Query ] ──► [ R: Router (0.5B) ] ──► Schema: {Risk: CRITICAL, Task: SYNTHESIS, Entities: [...]}
                           │
@@ -61,12 +62,14 @@ Standard AI chatbots guess the next word. In science, medicine, and engineering,
            [ Peer-Reviewed Grounded Output ]
 ```
 
+
 ### 1. Query Analyzer (0.5B) [Router]
 Intercepts the query and tags it with a validated Pydantic schema:
 - `RiskLevel`: `CRITICAL`, `HIGH`, `MEDIUM`, `LOW`
 - `TaskType`: `LITERATURE_REVIEW`, `MECHANISTIC_SYNTHESIS`, `FACT_CHECK`, `SAFETY_AUDIT`, `CALCULATION_DERIVATION`
 - `KeyEntities`: Chemical names, equations, constants
 - `LexicalKeywords` & `SemanticQueries`: High-signal query variants for retrieval
+
 
 ### 2. Hybrid Retriever (RRF) [Logic]
 Fuses lexical precision with semantic understanding in RAM:
@@ -177,3 +180,11 @@ python run_privearch.py    # Start Interactive Terminal OS
 | `chunk_size_words` | `150` | Semantic chunk size with 30-word sliding window overlap |
 | `rrf_k` | `60` | Reciprocal Rank Fusion constant |
 | `zero_trust_airgap` | `True` | Rejects any non-localhost network connections |
+
+## 📚 Documentation
+* [System Architecture](docs/architecture.md): In-depth RLCD mathematical and layer formulation.
+* [Execution & Data Flows](docs/flows.md): Document ingestion and adversarial audit sequence diagrams.
+* [Setup & Operations](docs/setup.md): Complete installation, testing, and air-gapped configuration.
+
+## 📄 License
+This project is licensed under the [MIT License](LICENSE).
