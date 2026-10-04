@@ -2,14 +2,16 @@
 
 import re
 import json
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from privearch.schemas import (
     ScoredChunk,
     AtomicClaim,
     VerificationStatus,
     VerificationAudit,
+    CalculationVerification,
 )
 from privearch.models.client import LocalModelClient
+
 
 
 CLAIM_AUDIT_SYSTEM_PROMPT = """You are Privearch OS Adversarial Verifier, an uncompromising scientific auditor.
@@ -43,7 +45,8 @@ class AdversarialVerifier:
     def audit(
         self,
         synthesis_text: str,
-        retrieved_chunks: List[ScoredChunk]
+        retrieved_chunks: List[ScoredChunk],
+        calculation_audits: Optional[List[CalculationVerification]] = None
     ) -> Tuple[VerificationAudit, str]:
         """
         Deconstructs synthesis into claims, verifies each against source chunks,
@@ -74,14 +77,38 @@ class AdversarialVerifier:
 
         # Audit each claim
         for claim_id, (sentence, cited_indices) in enumerate(raw_claims, start=1):
-            claim = self._verify_single_claim(
-                claim_id=claim_id,
-                claim_text=sentence,
-                cited_indices=cited_indices,
-                chunks_map=chunks_map,
-                all_chunks=retrieved_chunks
-            )
+            matched_calc: Optional[CalculationVerification] = None
+            if calculation_audits:
+                for ca in calculation_audits:
+                    # Match by target variable or computed/predicted numerical tokens
+                    has_var = bool(ca.target_variable and ca.target_variable in sentence)
+                    has_pred = bool(ca.model_predicted_value and ca.model_predicted_value in sentence)
+                    has_comp = bool(ca.deterministic_computed_value and ca.deterministic_computed_value in sentence)
+                    if has_var or has_pred or has_comp:
+                        matched_calc = ca
+                        break
+
+            if matched_calc:
+                claim = AtomicClaim(
+                    claim_id=claim_id,
+                    text=sentence,
+                    status=matched_calc.verification_status,
+                    cited_chunk_indices=cited_indices,
+                    evidence_quote=f"Deterministic SymPy Truth: {matched_calc.equation_latex} -> {matched_calc.deterministic_computed_value}",
+                    source_doc="Deterministic Scientific Solver",
+                    confidence=0.99,
+                    critique=matched_calc.verification_details
+                )
+            else:
+                claim = self._verify_single_claim(
+                    claim_id=claim_id,
+                    claim_text=sentence,
+                    cited_indices=cited_indices,
+                    chunks_map=chunks_map,
+                    all_chunks=retrieved_chunks
+                )
             audited_claims.append(claim)
+
 
             if claim.status == VerificationStatus.VERIFIED:
                 verified_count += 1

@@ -108,15 +108,18 @@ def build_global_release():
         "channel": "stable",
         "min_compatible_version": "1.0.0",
         "changelog": (
-            "### Privearch v1.0.0 Stable Release\n"
+            "### Privearch v1.1.0 Release - Deterministic Scientific Compute & Tool Graph Bus\n"
+            "- Deterministic Scientific Compute: Non-hallucinatory SymPy and NumPy mathematical solver\n"
+            "- Tool Graph Architecture: Extensible BaseToolAdapter and PythonSandboxAdapter\n"
+            "- AST Security Auditor: Sandboxed Python execution with timeout and process protection\n"
+            "- Equation & Variable Parser: Extracts LaTeX formulas and units from queries and literature\n"
+            "- Adversarial Mathematical Claim Auditing: Verifies predicted numbers against exact computed truth\n"
+            "- Artifact Registry & Provenance Ledger: Complete backward provenance tracking (Paper -> Equation -> Code -> Artifact)\n"
             "- Dual-Model Brain-Trust (0.5B Router + 4B Synthesizer + 0.5B Verifier)\n"
-            "- 100% Local Airgap (Zero Cloud Compute, CPU embeddings + 4GB VRAM)\n"
-            "- Hybrid In-RAM Retrieval (Okapi BM25 + FAISS RRF)\n"
-            "- Pre-Indexed 29 NCERT Chemistry Textbooks (2,280 semantic chunks)\n"
-            "- Native Windows Executables (Privearch.exe, Privearch-Terminal.exe, Privearch-Setup.exe)\n"
-            "- Zero-Trust Over-The-Air (OTA) Update Engine with Automatic Rollback"
+            "- 100% Local Airgap (Zero Cloud Compute, CPU embeddings + 4GB VRAM)"
         ),
         "download_url": f"https://github.com/pranav520214/Privreach/releases/download/v{VERSION}/privearch-ota-v{VERSION}.zip",
+
         "sha256": ota_sha
     }
 

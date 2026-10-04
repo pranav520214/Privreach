@@ -111,8 +111,49 @@ def display_rlcd_report(report):
         )
     console.print(ret_table)
 
+    # 2.5 Deterministic Scientific Calculations & Artifacts (Phase 2)
+    if report.calculations:
+        calc_table = Table(title="[bold blue]🧮 DETERMINISTIC SCIENTIFIC COMPUTATION (SYMPY & NUMPY TRUTH)[/bold blue]", border_style="blue")
+        calc_table.add_column("Target", style="bold yellow", width=8)
+        calc_table.add_column("Equation Formula", style="white", width=22)
+        calc_table.add_column("Input Variables", style="dim cyan", width=24)
+        calc_table.add_column("Computed Value", style="bold green", width=16)
+        calc_table.add_column("Predicted", style="dim", width=12)
+        calc_table.add_column("Math Audit", style="bold", width=16)
+
+        for calc in report.calculations:
+            status_style = "[bold green]VERIFIED ✓[/bold green]" if calc.is_verified else "[bold red]DISCREPANCY ❌[/bold red]"
+            vars_str = ", ".join([f"{k}={v}" for k, v in calc.variables.items()])
+            calc_table.add_row(
+                calc.target_variable,
+                calc.equation_latex,
+                vars_str[:22] + ("..." if len(vars_str) > 22 else ""),
+                str(calc.deterministic_computed_value),
+                str(calc.model_predicted_value or "-"),
+                status_style
+            )
+        console.print(calc_table)
+
+    if report.artifacts:
+        art_table = Table(title="[bold magenta]📦 SCIENTIFIC ARTIFACTS & PROVENANCE LEDGER[/bold magenta]", border_style="magenta")
+        art_table.add_column("Artifact ID", style="bold cyan", width=14)
+        art_table.add_column("Type", style="yellow", width=12)
+        art_table.add_column("Name", style="white", width=24)
+        art_table.add_column("Proof Chain / Provenance", style="dim white")
+
+        for art in report.artifacts:
+            proof = art.provenance.get("proof_chain", art.file_path)
+            art_table.add_row(
+                art.artifact_id,
+                art.artifact_type.value,
+                art.name,
+                proof
+            )
+        console.print(art_table)
+
     # 3. Adversarial Claim Verification Matrix
     audit = report.verification
+
     v_color = "bold green" if audit.grounding_score >= 80 else ("bold yellow" if audit.grounding_score >= 50 else "bold red")
 
     claim_table = Table(

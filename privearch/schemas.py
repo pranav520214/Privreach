@@ -98,6 +98,82 @@ class AtomicClaim(BaseModel):
     confidence: float = 0.0
     critique: str = ""
 
+class EvidenceType(str, Enum):
+    DOCUMENT_PAGE = "DOCUMENT_PAGE"
+    VIDEO_TIMECODE = "VIDEO_TIMECODE"
+    AUDIO_TRANSCRIPT = "AUDIO_TRANSCRIPT"
+    COMPUTATION_RESULT = "COMPUTATION_RESULT"
+
+
+class EvidenceChunk(BaseModel):
+    """Unified multi-modal evidence chunk across documents, video, and audio."""
+    chunk_id: str
+    source_name: str
+    evidence_type: EvidenceType = EvidenceType.DOCUMENT_PAGE
+    page_num: Optional[int] = None
+    timestamp_start: Optional[float] = None  # seconds
+    timestamp_end: Optional[float] = None    # seconds
+    speaker_id: Optional[str] = None
+    text: str
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class ToolCallRequest(BaseModel):
+    """Request to invoke a deterministic tool adapter."""
+    tool_name: str
+    parameters: Dict[str, Any] = Field(default_factory=dict)
+    purpose: str = ""
+
+
+class ToolCallResult(BaseModel):
+    """Result returned by a deterministic tool adapter."""
+    tool_name: str
+    success: bool
+    output: Any = None
+    stdout: str = ""
+    stderr: str = ""
+    execution_time_ms: float = 0.0
+    error: Optional[str] = None
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
+
+class CalculationVerification(BaseModel):
+    """Deterministic scientific calculation audit record."""
+    equation_latex: str = ""
+    target_variable: str = ""
+    variables: Dict[str, Any] = Field(default_factory=dict)
+    units: Dict[str, str] = Field(default_factory=dict)
+    model_predicted_value: Optional[str] = None
+    deterministic_computed_value: Optional[str] = None
+    is_verified: bool = False
+    absolute_error: Optional[float] = None
+    relative_error: Optional[float] = None
+    verification_status: VerificationStatus = VerificationStatus.UNSUPPORTED
+    verification_details: str = ""
+    code_executed: str = ""
+
+
+class ArtifactType(str, Enum):
+    CALCULATION = "CALCULATION"
+    PLOT_2D = "PLOT_2D"
+    DATASET = "DATASET"
+    MODEL_3D = "MODEL_3D"
+    VIDEO_EXPLAINER = "VIDEO_EXPLAINER"
+    REPORT_PDF = "REPORT_PDF"
+    SLIDES_PPTX = "SLIDES_PPTX"
+
+
+class ArtifactRecord(BaseModel):
+    """Tracked artifact with complete provenance linkage."""
+    artifact_id: str
+    artifact_type: ArtifactType
+    name: str
+    file_path: str
+    created_at: float
+    description: str = ""
+    provenance: Dict[str, Any] = Field(default_factory=dict)
+    metadata: Dict[str, Any] = Field(default_factory=dict)
+
 
 class VerificationAudit(BaseModel):
     """Output of the 0.5B Adversarial Verifier audit."""
@@ -120,3 +196,7 @@ class PrivearchReport(BaseModel):
     verification: VerificationAudit
     annotated_synthesis: str
     execution_stats: Dict[str, Any] = Field(default_factory=dict)
+    calculations: List[CalculationVerification] = Field(default_factory=list)
+    artifacts: List[ArtifactRecord] = Field(default_factory=list)
+    tool_executions: List[ToolCallResult] = Field(default_factory=list)
+

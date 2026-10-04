@@ -41,6 +41,9 @@ def build_app(kernel: PrivearchKernel):
                 "",
                 [],
                 "No query provided.",
+                "",
+                "",
+                [],
                 ""
             )
 
@@ -50,6 +53,9 @@ def build_app(kernel: PrivearchKernel):
                 "",
                 [],
                 "Ingestion required.",
+                "",
+                "",
+                [],
                 ""
             )
 
@@ -101,9 +107,38 @@ def build_app(kernel: PrivearchKernel):
             f"**Total Execution Time:** {report.execution_stats['total_elapsed_ms']} ms  \n"
             f"• Router: {report.execution_stats['stage_timings']['router_ms']} ms  \n"
             f"• Hybrid Retriever: {report.execution_stats['stage_timings']['retrieval_ms']} ms  \n"
+            f"• Compute: {report.execution_stats['stage_timings'].get('compute_ms', 0)} ms  \n"
             f"• Synthesis Engine (4B): {report.execution_stats['stage_timings']['synthesis_ms']} ms  \n"
             f"• Adversarial Verifier (0.5B): {report.execution_stats['stage_timings']['verifier_ms']} ms"
         )
+
+        # Calculations table data
+        calcs_table_data = []
+        for calc in report.calculations:
+            v_status = "✓ VERIFIED" if calc.is_verified else "❌ DISCREPANCY"
+            vars_str = ", ".join([f"{k}={v}" for k, v in calc.variables.items()])
+            calcs_table_data.append([
+                calc.target_variable,
+                calc.equation_latex,
+                vars_str,
+                str(calc.deterministic_computed_value),
+                str(calc.model_predicted_value or "-"),
+                v_status,
+                calc.verification_details
+            ])
+
+        # Artifacts markdown
+        if report.artifacts:
+            art_lines = ["### 📦 Registered Provenance Artifacts"]
+            for art in report.artifacts:
+                art_lines.append(
+                    f"- **{art.name}** (`{art.artifact_id}`) | *Type:* `{art.artifact_type.value}`  \n"
+                    f"  *File:* `{art.file_path}`  \n"
+                    f"  *Proof Chain:* `{art.provenance.get('proof_chain', 'Direct')}`"
+                )
+            artifacts_md = "\n\n".join(art_lines)
+        else:
+            artifacts_md = "*No artifacts generated for this query.*"
 
         return (
             report.annotated_synthesis,
@@ -111,8 +146,11 @@ def build_app(kernel: PrivearchKernel):
             claims_table_data,
             router_card,
             passages_text,
-            telemetry
+            telemetry,
+            calcs_table_data,
+            artifacts_md
         )
+
 
     def handle_ota_check(custom_url):
         url = custom_url.strip() if custom_url and custom_url.strip() else DEFAULT_OTA_MANIFEST_URL
@@ -368,15 +406,33 @@ def build_app(kernel: PrivearchKernel):
                 auto_install_btn.click(handle_engine_auto_setup, inputs=[], outputs=[engine_output_md])
                 pull_model_btn.click(handle_pull_custom_model, inputs=[custom_model_input], outputs=[engine_output_md])
 
+            with gr.TabItem("🧮 Deterministic Compute & Artifacts"):
+                gr.Markdown(
+                    """
+                    ### 🧮 Deterministic Scientific Computing (SymPy & NumPy Ground Truth)
+                    Calculations are solved symbolically and numerically using deterministic local software,
+                    not by language model guesswork. Every artifact tracks backward provenance to source evidence.
+                    """
+                )
+                calcs_table = gr.Dataframe(
+                    headers=["Target Var", "Equation Formula", "Input Parameters", "Computed Truth", "Model Predicted", "Audit Status", "Verification Details"],
+                    datatype=["str", "str", "str", "str", "str", "str", "str"],
+                    interactive=False
+                )
+                artifacts_box = gr.Markdown("Artifacts will appear here.")
 
         submit_btn.click(
             handle_query,
             inputs=[query_input],
-            outputs=[synthesis_md, audit_summary_md, claims_table, router_md, passages_box, telemetry_md]
+            outputs=[synthesis_md, audit_summary_md, claims_table, router_md, passages_box, telemetry_md, calcs_table, artifacts_box]
         )
-        clear_btn.click(lambda: ("", "", "", [], "", ""), outputs=[query_input, synthesis_md, audit_summary_md, claims_table, router_md, passages_box])
+        clear_btn.click(
+            lambda: ("", "", "", [], "", "", "", [], ""),
+            outputs=[query_input, synthesis_md, audit_summary_md, claims_table, router_md, passages_box, telemetry_md, calcs_table, artifacts_box]
+        )
 
     return demo
+
 
 
 import socket

@@ -7,11 +7,16 @@ from typing import List, Dict, Any, Optional
 
 from privearch.config import PrivearchConfig, DEFAULT_CONFIG
 from privearch.schemas import (
+
     DocumentChunk,
     ScoredChunk,
     QueryAnalysis,
     VerificationAudit,
     PrivearchReport,
+    CalculationVerification,
+    ArtifactRecord,
+    ToolCallResult,
+    TaskType,
 )
 from privearch.ingestion.pdf_extractor import extract_pdf
 from privearch.ingestion.chunker import chunk_document
@@ -23,6 +28,10 @@ from privearch.models.client import LocalModelClient
 from privearch.models.query_analyzer import QueryAnalyzer
 from privearch.models.synthesis_engine import SynthesisEngine
 from privearch.models.adversarial_verifier import AdversarialVerifier
+from privearch.tools import ToolGraph
+from privearch.compute import DeterministicSolver, EquationParser
+from privearch.artifacts import ArtifactRegistry
+
 
 
 class PrivearchKernel:
@@ -69,6 +78,11 @@ class PrivearchKernel:
         self.synthesis = SynthesisEngine(client=self.client, model_name=self.synthesis_model)
         self.verifier = AdversarialVerifier(client=self.client, model_name=self.verifier_model)
 
+        # 4. Deterministic Tool Graph, Solver & Artifact Registry
+        self.tool_graph = ToolGraph()
+        self.solver = DeterministicSolver(sandbox=self.tool_graph.get("python_sandbox"))
+        self.artifact_registry = ArtifactRegistry()
+
         # Ingestion state tracking
         self.ingested_files: List[Dict[str, Any]] = []
         self.total_chunks: int = 0
@@ -76,6 +90,7 @@ class PrivearchKernel:
 
         # Automatically load cached index if available
         self.load_index()
+
 
     def save_index(self, cache_dir: Optional[str] = None) -> bool:
         """Persist In-RAM hybrid index to disk for instant zero-latency boot."""
@@ -228,11 +243,12 @@ class PrivearchKernel:
 
     def execute_rlcd(self, query: str) -> PrivearchReport:
         """
-        Executes the full RLCD 4-Stage Operating System Pipeline:
+        Executes the full RLCD 4-Stage Operating System Pipeline with Phase 2 Scientific Compute:
           Stage 1: Query Analyzer (0.5B Router)
           Stage 2: Hybrid RRF Retriever (BM25 + FAISS)
-          Stage 3: Synthesis Engine (4B Model)
-          Stage 4: Adversarial Verifier (0.5B Model)
+          Phase 2 Compute: Deterministic SymPy/NumPy Solver & Artifact Generation
+          Stage 3: Synthesis Engine (4B Model with Ground Truth Injection)
+          Stage 4: Adversarial Verifier (0.5B Model + Deterministic Math Audit)
         """
         t_start = time.time()
         stage_timings: Dict[str, float] = {}
@@ -253,20 +269,117 @@ class PrivearchKernel:
         )
         stage_timings["retrieval_ms"] = round((time.time() - t2) * 1000, 1)
 
+        # --- Phase 2: Deterministic Scientific Computation (Non-LLM Truth) ---
+        t_calc = time.time()
+        calculations: List[CalculationVerification] = []
+        artifacts: List[ArtifactRecord] = []
+        tool_executions: List[ToolCallResult] = []
+        injected_calc_context = ""
+
+        is_calc_task = (analysis.task_type == TaskType.CALCULATION_DERIVATION)
+        equations = EquationParser.extract_equations(query)
+        variables = EquationParser.extract_variable_assignments(query)
+
+        # If equation not in query, check top retrieved chunks
+        if not equations and retrieved_chunks:
+            for sc in retrieved_chunks[:3]:
+                found_eqs = EquationParser.extract_equations(sc.chunk.text)
+                if found_eqs:
+                    equations.extend(found_eqs)
+                    break
+
+        # If variables not in query, check top retrieved chunks
+        if not variables and retrieved_chunks:
+            for sc in retrieved_chunks[:3]:
+                found_vars = EquationParser.extract_variable_assignments(sc.chunk.text)
+                if found_vars:
+                    variables.update(found_vars)
+
+        target_eq = equations[0] if equations else ""
+        target_var = "ans"
+        if target_eq and (variables or is_calc_task):
+            for ent in analysis.key_entities:
+                if len(ent) <= 4 and ent.isalnum():
+                    target_var = ent
+                    break
+            if target_var == "ans" and "=" in target_eq:
+                lhs = target_eq.split("=")[0].strip()
+                if len(lhs) <= 4 and lhs.isalnum():
+                    target_var = lhs
+
+            calc_val, formula_str, derivation_code = self.solver.solve_equation(
+                equation_str=target_eq,
+                target_variable=target_var,
+                known_values=variables
+            )
+
+            if calc_val is not None:
+                tool_executions.append(ToolCallResult(
+                    tool_name="deterministic_solver",
+                    success=True,
+                    output=calc_val,
+                    stdout=formula_str,
+                    execution_time_ms=round((time.time() - t_calc) * 1000, 1),
+                    metadata={"target_variable": target_var, "equation": target_eq}
+                ))
+
+                source_doc = retrieved_chunks[0].chunk.doc_name if retrieved_chunks else "User Query"
+                source_page = retrieved_chunks[0].chunk.page_num if retrieved_chunks else None
+
+                calc_artifact = self.artifact_registry.save_calculation(
+                    name=f"Calculation of {target_var}",
+                    equation=target_eq,
+                    variables=variables,
+                    computed_value=calc_val,
+                    code_executed=derivation_code,
+                    source_doc=source_doc,
+                    source_page=source_page,
+                    description=f"Deterministic SymPy calculation for {target_var} in '{target_eq}'"
+                )
+                artifacts.append(calc_artifact)
+
+                injected_calc_context = (
+                    f"\n\n[DETERMINISTIC SCIENTIFIC COMPUTATION - VERIFIED TRUTH]:\n"
+                    f"Equation: {target_eq}\n"
+                    f"Parameters: {variables}\n"
+                    f"Symbolic Formulation: {formula_str}\n"
+                    f"Deterministic Computed Value: {calc_val:.5g}\n"
+                    f"CRITICAL: Use this EXACT computed value in your synthesis.\n"
+                )
+
+        stage_timings["compute_ms"] = round((time.time() - t_calc) * 1000, 1)
+
         # --- Stage 3: Control (4B Synthesis Engine) ---
         t3 = time.time()
+        augmented_analysis = analysis.model_copy()
+        if injected_calc_context:
+            augmented_analysis.analysis_rationale = (
+                f"{analysis.analysis_rationale} {injected_calc_context}"
+            )
+
         raw_synthesis = self.synthesis.synthesize(
             query=query,
-            query_analysis=analysis,
+            query_analysis=augmented_analysis,
             retrieved_chunks=retrieved_chunks
         )
         stage_timings["synthesis_ms"] = round((time.time() - t3) * 1000, 1)
+
+        # --- Audit Calculations Deterministically ---
+        if target_eq and variables:
+            calc_audit = self.solver.verify_calculation(
+                equation_str=target_eq,
+                target_variable=target_var,
+                known_values=variables,
+                model_claimed_text=raw_synthesis
+            )
+            calculations.append(calc_audit)
 
         # --- Stage 4: Decision (0.5B Adversarial Verifier) ---
         t4 = time.time()
         audit, annotated_synthesis = self.verifier.audit(
             synthesis_text=raw_synthesis,
-            retrieved_chunks=retrieved_chunks
+            retrieved_chunks=retrieved_chunks,
+            calculation_audits=calculations
         )
         stage_timings["verifier_ms"] = round((time.time() - t4) * 1000, 1)
 
@@ -285,7 +398,8 @@ class PrivearchKernel:
             "ram_used_percent": mem_info.percent,
             "ram_available_gb": round(mem_info.available / (1024**3), 2),
             "total_indexed_chunks": self.total_chunks,
-            "total_indexed_docs": len(self.ingested_files)
+            "total_indexed_docs": len(self.ingested_files),
+            "total_artifacts": len(self.artifact_registry.list_all())
         }
 
         return PrivearchReport(
@@ -295,17 +409,22 @@ class PrivearchKernel:
             raw_synthesis=raw_synthesis,
             verification=audit,
             annotated_synthesis=annotated_synthesis,
-            execution_stats=stats
+            execution_stats=stats,
+            calculations=calculations,
+            artifacts=artifacts,
+            tool_executions=tool_executions
         )
 
     def get_system_status(self) -> Dict[str, Any]:
         """Telemetry snapshot of Privearch OS."""
         mem = psutil.virtual_memory()
         return {
-            "version": "1.0.0",
+            "version": "1.1.0",
             "airgap_mode": self.config.zero_trust_airgap,
             "indexed_documents": len(self.ingested_files),
             "indexed_chunks": self.total_chunks,
+            "registered_tools": [t["name"] for t in self.tool_graph.list_tools()],
+            "total_artifacts": len(self.artifact_registry.list_all()),
             "router_model": self.router_model,
             "synthesis_model": self.synthesis_model,
             "verifier_model": self.verifier_model,
@@ -313,3 +432,4 @@ class PrivearchKernel:
             "host_ram_used_percent": mem.percent,
             "host_ram_free_gb": round(mem.available / (1024**3), 2)
         }
+
