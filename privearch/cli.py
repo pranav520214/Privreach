@@ -33,7 +33,7 @@ BANNER = """[bold cyan]
  ██║     ██║  ██║██║ ╚████╔╝ ███████╗██║  ██║██║  ██║╚██████╗██║  ██║
  ╚═╝     ╚═╝  ╚═╝╚═╝  ╚═══╝  ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝[/bold cyan]
 [bold white]  ⚡ ZERO-TRUST LOCAL SCIENTIFIC OPERATING SYSTEM  |  CPU + 4GB VRAM[/bold white]
-[dim green]  🔒 100% Local Airgap  •  🧠 Dual-Model Brain-Trust  •  🛡️ Adversarial Claim Audit[/dim green]
+[bold cyan]  🔒 PRIVACY  •  💻 LOCAL AI  •  📖 SCIENTIFIC KNOWLEDGE  •  🛡️ VERIFICATION[/bold cyan]
 """
 
 

@@ -210,14 +210,41 @@ def build_app(kernel: PrivearchKernel):
             return f"### ❌ Download Failed\n\n`{msg}`"
 
 
-    with gr.Blocks(title="Privearch OS - Zero-Trust Scientific Synthesis") as demo:
-        gr.Markdown(
+    # Look for brand logo
+    logo_candidates = [
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "logo_web.png"),
+        os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "logo.png"),
+        os.path.join(".", "assets", "logo_web.png"),
+        os.path.join(".", "assets", "logo.png"),
+    ]
+    logo_html = ""
+    for lc in logo_candidates:
+        if os.path.exists(lc):
+            try:
+                import base64
+                with open(lc, "rb") as f:
+                    b64 = base64.b64encode(f.read()).decode("utf-8")
+                logo_html = f"<img src='data:image/png;base64,{b64}' style='max-height: 120px; display: block; margin: 0 auto 12px auto; filter: drop-shadow(0 4px 12px rgba(0, 210, 255, 0.25));'>"
+                break
+            except Exception:
+                pass
+
+    with gr.Blocks(title="Privreach OS - Zero-Trust Scientific Synthesis") as demo:
+        gr.HTML(
             f"""
-            # ⚡ Privearch Operating System
-            ### Zero-Trust, 100% Local Scientific Synthesis with Dual-Model Adversarial Verification
-            *v{VERSION} ({BUILD_CHANNEL})  •  CPU embeddings + 4GB VRAM  •  Zero data leaves this machine.*
+            <div style="text-align: center; margin-bottom: 20px; padding: 20px 16px 16px 16px; border-radius: 14px; background: linear-gradient(180deg, rgba(0, 210, 255, 0.08) 0%, rgba(0, 0, 0, 0) 100%); border: 1px solid rgba(0, 210, 255, 0.15);">
+                {logo_html}
+                <h1 style="margin: 0; font-size: 2.4em; font-weight: 800; letter-spacing: -0.5px;">Privreach Operating System</h1>
+                <p style="color: #00d2ff; font-size: 1.15em; font-weight: 600; margin: 8px 0;">
+                    🔒 PRIVACY &nbsp;•&nbsp; 💻 LOCAL AI &nbsp;•&nbsp; 📖 SCIENTIFIC KNOWLEDGE &nbsp;•&nbsp; 🛡️ VERIFICATION
+                </p>
+                <p style="color: #888; font-size: 0.9em; margin: 0;">
+                    Zero-Trust Local Synthesis on Consumer Hardware (CPU Embeddings + 4GB VRAM) • v{VERSION} ({BUILD_CHANNEL})
+                </p>
+            </div>
             """
         )
+
 
         with gr.Row():
             with gr.Column(scale=1):

@@ -1,10 +1,20 @@
-# ⚡ Privearch
+<div align="center">
+  <img src="assets/logo.png" alt="Privreach Logo" width="280">
+  
+  # ⚡ Privreach
+  **Zero-Trust, 100% Local Scientific & Engineering Operating System**  
+  *Dual-Model Adversarial Verification • CPU Embeddings + 4GB VRAM • Zero Data Egress*
 
-> **An Operating System, Not a Chatbot.**  
-> Zero-Trust, 100% Local Scientific & Engineering Synthesis with Dual-Model Adversarial Verification.  
-> Designed for Consumer Hardware (CPU Embeddings + 4GB VRAM). Zero Data Egress.
+  <p>
+    <code>🔒 PRIVACY</code> &nbsp;•&nbsp;
+    <code>💻 LOCAL AI</code> &nbsp;•&nbsp;
+    <code>📖 SCIENTIFIC KNOWLEDGE</code> &nbsp;•&nbsp;
+    <code>🛡️ VERIFICATION</code>
+  </p>
+</div>
 
 ---
+
 
 ## ⚡ Why Privearch?
 
