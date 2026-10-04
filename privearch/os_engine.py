@@ -1,0 +1,315 @@
+"""Privearch OS Engine: The RLCD Orchestration Kernel."""
+
+import time
+import os
+import psutil
+from typing import List, Dict, Any, Optional
+
+from privearch.config import PrivearchConfig, DEFAULT_CONFIG
+from privearch.schemas import (
+    DocumentChunk,
+    ScoredChunk,
+    QueryAnalysis,
+    VerificationAudit,
+    PrivearchReport,
+)
+from privearch.ingestion.pdf_extractor import extract_pdf
+from privearch.ingestion.chunker import chunk_document
+from privearch.retrieval.embeddings import get_embedding_engine
+from privearch.retrieval.bm25 import InRamBM25
+from privearch.retrieval.faiss_index import InRamVectorIndex
+from privearch.retrieval.hybrid_rrf import HybridRRFRetriever
+from privearch.models.client import LocalModelClient
+from privearch.models.query_analyzer import QueryAnalyzer
+from privearch.models.synthesis_engine import SynthesisEngine
+from privearch.models.adversarial_verifier import AdversarialVerifier
+
+
+class PrivearchKernel:
+    """
+    Privearch Operating System Kernel:
+    Manages In-RAM hybrid indexes, CPU embeddings, and the RLCD dual-model pipeline.
+    """
+    def __init__(self, config: PrivearchConfig = DEFAULT_CONFIG):
+        self.config = config
+
+        # 1. Initialize Local Client
+        self.client = LocalModelClient(base_url=config.ollama_base_url)
+
+        # Model Selection with Automatic Local Fallbacks
+        self.router_model = self.client.select_best_model(
+            config.router_model, config.router_fallbacks
+        )
+        self.synthesis_model = self.client.select_best_model(
+            config.synthesis_model, config.synthesis_fallbacks
+        )
+        self.verifier_model = self.client.select_best_model(
+            config.verifier_model, config.verifier_fallbacks
+        )
+
+        # 2. In-RAM Hybrid Storage & Retrieval
+        self.embedding_engine = get_embedding_engine(
+            backend=config.embedding_backend,
+            model_name=config.cpu_embedding_model if config.embedding_backend == "cpu_minilm" else config.ollama_embedding_model,
+            base_url=config.ollama_base_url
+        )
+
+        dim = 384 if config.embedding_backend == "cpu_minilm" else 1024
+        self.bm25 = InRamBM25(k1=config.bm25_k1, b=config.bm25_b)
+        self.vector_index = InRamVectorIndex(dimension=dim)
+        self.hybrid_retriever = HybridRRFRetriever(
+            bm25_index=self.bm25,
+            vector_index=self.vector_index,
+            embedding_engine=self.embedding_engine,
+            rrf_k=config.rrf_k
+        )
+
+        # 3. RLCD Processors
+        self.router = QueryAnalyzer(client=self.client, model_name=self.router_model)
+        self.synthesis = SynthesisEngine(client=self.client, model_name=self.synthesis_model)
+        self.verifier = AdversarialVerifier(client=self.client, model_name=self.verifier_model)
+
+        # Ingestion state tracking
+        self.ingested_files: List[Dict[str, Any]] = []
+        self.total_chunks: int = 0
+        self.cache_dir = os.path.abspath(".privearch_cache")
+
+        # Automatically load cached index if available
+        self.load_index()
+
+    def save_index(self, cache_dir: Optional[str] = None) -> bool:
+        """Persist In-RAM hybrid index to disk for instant zero-latency boot."""
+        target_dir = cache_dir or self.cache_dir
+        os.makedirs(target_dir, exist_ok=True)
+
+        if not self.bm25.chunks or self.vector_index.vectors is None:
+            return False
+
+        import json
+        import numpy as np
+
+        # 1. Save chunks
+        chunks_data = [c.model_dump() for c in self.bm25.chunks]
+        with open(os.path.join(target_dir, "chunks.json"), "w", encoding="utf-8") as f:
+            json.dump(chunks_data, f, ensure_ascii=False)
+
+        # 2. Save vectors
+        np.save(os.path.join(target_dir, "vectors.npy"), self.vector_index.vectors)
+
+        # 3. Save manifest
+        manifest = {
+            "total_chunks": self.total_chunks,
+            "ingested_files": self.ingested_files,
+            "embedding_dimension": self.vector_index.dimension,
+            "embedding_backend": self.config.embedding_backend
+        }
+        with open(os.path.join(target_dir, "manifest.json"), "w", encoding="utf-8") as f:
+            json.dump(manifest, f, indent=2, ensure_ascii=False)
+
+        return True
+
+    def load_index(self, cache_dir: Optional[str] = None) -> bool:
+        """Load pre-indexed knowledge vault into RAM in milliseconds."""
+        target_dir = cache_dir or self.cache_dir
+        chunks_file = os.path.join(target_dir, "chunks.json")
+        vectors_file = os.path.join(target_dir, "vectors.npy")
+        manifest_file = os.path.join(target_dir, "manifest.json")
+
+        if not (os.path.exists(chunks_file) and os.path.exists(vectors_file) and os.path.exists(manifest_file)):
+            return False
+
+        try:
+            import json
+            import numpy as np
+
+            with open(manifest_file, "r", encoding="utf-8") as f:
+                manifest = json.load(f)
+
+            with open(chunks_file, "r", encoding="utf-8") as f:
+                raw_chunks = json.load(f)
+
+            chunks = [DocumentChunk(**c) for c in raw_chunks]
+            vectors = np.load(vectors_file)
+
+            # Clear current and populate in-RAM
+            self.bm25.clear()
+            self.vector_index.clear()
+
+            self.bm25.add_chunks(chunks)
+            self.vector_index.add_vectors(vectors, chunks)
+
+            self.ingested_files = manifest.get("ingested_files", [])
+            self.total_chunks = len(chunks)
+            return True
+        except Exception as e:
+            print(f"[Warning] Failed to load index cache: {e}")
+            return False
+
+    def ingest_pdf(self, pdf_path: str, force: bool = False, auto_save: bool = True) -> Dict[str, Any]:
+        """
+        Dynamically ingest a PDF file into RAM:
+        Extract text -> Semantic chunking -> CPU embedding -> Update BM25 and FAISS in RAM.
+        """
+        # Check if already ingested
+        abs_path = os.path.abspath(pdf_path)
+        if not force:
+            for f in self.ingested_files:
+                if f.get("path") == abs_path or f.get("doc_name") == os.path.basename(pdf_path):
+                    return {
+                        "status": "already_indexed",
+                        "doc_name": os.path.basename(pdf_path),
+                        "pages": f.get("pages", 0),
+                        "chunks": f.get("chunks", 0),
+                        "total_ram_chunks": self.total_chunks,
+                        "time_s": 0.0
+                    }
+        t0 = time.time()
+        # 1. Extraction
+        doc_info = extract_pdf(pdf_path)
+
+        # 2. Semantic Chunking
+        new_chunks = chunk_document(
+            doc_info=doc_info,
+            chunk_size_words=self.config.chunk_size_words,
+            chunk_overlap_words=self.config.chunk_overlap_words,
+            min_chunk_words=self.config.min_chunk_words
+        )
+
+        if not new_chunks:
+            return {"status": "empty", "chunks": 0, "time_s": round(time.time() - t0, 3)}
+
+        # 3. CPU Vectorization
+        chunk_texts = [c.text for c in new_chunks]
+        vectors = self.embedding_engine.embed_documents(chunk_texts)
+
+        # 4. In-RAM Index Updating
+        self.bm25.add_chunks(new_chunks)
+        self.vector_index.add_vectors(vectors, new_chunks)
+
+        self.total_chunks += len(new_chunks)
+        self.ingested_files.append({
+            "doc_name": doc_info["doc_name"],
+            "path": doc_info["file_path"],
+            "pages": doc_info["page_count"],
+            "size_mb": doc_info["file_size_mb"],
+            "chunks": len(new_chunks)
+        })
+
+        elapsed = round(time.time() - t0, 3)
+        if auto_save:
+            self.save_index()
+
+        return {
+            "status": "success",
+            "doc_name": doc_info["doc_name"],
+            "pages": doc_info["page_count"],
+            "chunks": len(new_chunks),
+            "total_ram_chunks": self.total_chunks,
+            "time_s": elapsed
+        }
+
+    def ingest_directory(self, dir_path: str, max_files: Optional[int] = None) -> List[Dict[str, Any]]:
+        """Scan directory recursively and ingest all scientific PDF files."""
+        results = []
+        count = 0
+        for root, _, files in os.walk(dir_path):
+            for f in files:
+                if f.lower().endswith('.pdf'):
+                    full_path = os.path.join(root, f)
+                    res = self.ingest_pdf(full_path, auto_save=False)
+                    results.append(res)
+                    count += 1
+                    if max_files and count >= max_files:
+                        self.save_index()
+                        return results
+        # Persist index cache once after all files are processed
+        self.save_index()
+        return results
+
+    def execute_rlcd(self, query: str) -> PrivearchReport:
+        """
+        Executes the full RLCD 4-Stage Operating System Pipeline:
+          Stage 1: Query Analyzer (0.5B Router)
+          Stage 2: Hybrid RRF Retriever (BM25 + FAISS)
+          Stage 3: Synthesis Engine (4B Model)
+          Stage 4: Adversarial Verifier (0.5B Model)
+        """
+        t_start = time.time()
+        stage_timings: Dict[str, float] = {}
+
+        # --- Stage 1: Router (0.5B) ---
+        t1 = time.time()
+        analysis = self.router.analyze(query)
+        stage_timings["router_ms"] = round((time.time() - t1) * 1000, 1)
+
+        # --- Stage 2: Logic (Hybrid RRF Retriever) ---
+        t2 = time.time()
+        retrieved_chunks = self.hybrid_retriever.retrieve(
+            query=query,
+            lexical_keywords=analysis.lexical_keywords,
+            top_k_bm25=self.config.top_k_bm25,
+            top_k_dense=self.config.top_k_dense,
+            top_k_final=self.config.top_k_final
+        )
+        stage_timings["retrieval_ms"] = round((time.time() - t2) * 1000, 1)
+
+        # --- Stage 3: Control (4B Synthesis Engine) ---
+        t3 = time.time()
+        raw_synthesis = self.synthesis.synthesize(
+            query=query,
+            query_analysis=analysis,
+            retrieved_chunks=retrieved_chunks
+        )
+        stage_timings["synthesis_ms"] = round((time.time() - t3) * 1000, 1)
+
+        # --- Stage 4: Decision (0.5B Adversarial Verifier) ---
+        t4 = time.time()
+        audit, annotated_synthesis = self.verifier.audit(
+            synthesis_text=raw_synthesis,
+            retrieved_chunks=retrieved_chunks
+        )
+        stage_timings["verifier_ms"] = round((time.time() - t4) * 1000, 1)
+
+        total_time_ms = round((time.time() - t_start) * 1000, 1)
+
+        # System telemetry
+        mem_info = psutil.virtual_memory()
+        stats = {
+            "total_elapsed_ms": total_time_ms,
+            "stage_timings": stage_timings,
+            "models_used": {
+                "router_0_5b": self.router_model,
+                "synthesis_4b": self.synthesis_model,
+                "verifier_0_5b": self.verifier_model
+            },
+            "ram_used_percent": mem_info.percent,
+            "ram_available_gb": round(mem_info.available / (1024**3), 2),
+            "total_indexed_chunks": self.total_chunks,
+            "total_indexed_docs": len(self.ingested_files)
+        }
+
+        return PrivearchReport(
+            query=query,
+            query_analysis=analysis,
+            retrieved_chunks=retrieved_chunks,
+            raw_synthesis=raw_synthesis,
+            verification=audit,
+            annotated_synthesis=annotated_synthesis,
+            execution_stats=stats
+        )
+
+    def get_system_status(self) -> Dict[str, Any]:
+        """Telemetry snapshot of Privearch OS."""
+        mem = psutil.virtual_memory()
+        return {
+            "version": "1.0.0",
+            "airgap_mode": self.config.zero_trust_airgap,
+            "indexed_documents": len(self.ingested_files),
+            "indexed_chunks": self.total_chunks,
+            "router_model": self.router_model,
+            "synthesis_model": self.synthesis_model,
+            "verifier_model": self.verifier_model,
+            "embedding_engine": self.config.embedding_backend,
+            "host_ram_used_percent": mem.percent,
+            "host_ram_free_gb": round(mem.available / (1024**3), 2)
+        }

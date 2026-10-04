@@ -1,43 +1,39 @@
-# Python
+# Python bytecode & environments
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
 env/
+venv/
+.venv/
 build/
 develop-eggs/
-dist/
-downloads/
 eggs/
 .eggs/
-lib/
-lib64/
 parts/
-sdist/
 var/
 *.egg-info/
 .installed.cfg
 *.egg
 
-# Virtual environments
-venv/
-.venv/
-env/
-.env/
+# Compiled binaries / build intermediates
+*.o
+*.obj
+dist/
 
-# Models
-*.gguf
-*.bin
-models/foundation/*.gguf
+# Privearch local vaults and caches (protects user data & keeps repo light)
+.privearch_cache/
+.privearch_backup/
+.ota_staging/
 
-# IDEs
+# Local scientific textbook PDFs
+*.pdf
+kech1dd/
+
+# IDE & OS files
 .idea/
 .vscode/
 *.swp
 *.swo
-
-# Datasets
-*.jsonl
-*.json
-datasets/retrieval/*.jsonl
+Thumbs.db
