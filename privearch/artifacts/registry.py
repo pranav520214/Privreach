@@ -26,6 +26,46 @@ class ArtifactRegistry:
         self._artifacts: Dict[str, ArtifactRecord] = {}
         self.load_manifest()
 
+    @property
+    def artifacts_dir(self) -> str:
+        """Convenience alias for storage_dir."""
+        return self.storage_dir
+
+    @property
+    def base_dir(self) -> str:
+        """Convenience alias for storage_dir."""
+        return self.storage_dir
+
+    def register_artifact(
+        self,
+        name: str,
+        artifact_type: ArtifactType,
+        content: str,
+        provenance: Optional[Dict[str, Any]] = None,
+        description: str = "",
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> ArtifactRecord:
+        """Helper to create and register an ArtifactRecord for any file or output."""
+        prefix = artifact_type.value.lower()[:4]
+        art_id = f"{prefix}_{uuid.uuid4().hex[:8]}"
+        meta = metadata or {}
+        if os.path.exists(content):
+            meta.setdefault("file_size_bytes", os.path.getsize(content))
+
+        record = ArtifactRecord(
+            artifact_id=art_id,
+            artifact_type=artifact_type,
+            name=name,
+            file_path=content,
+            created_at=time.time(),
+            description=description or f"Generated {artifact_type.value}: {name}",
+            provenance=provenance or {},
+            metadata=meta
+        )
+        return self.register(record)
+
+    save_artifact = register_artifact
+
     def load_manifest(self) -> None:
         """Load artifact registry from disk if exists."""
         if os.path.exists(self.manifest_path):

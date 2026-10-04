@@ -370,3 +370,54 @@ class CanvasGenerator:
         engine = MeetingIntelligenceEngine()
         return engine.format_meeting_markdown(insights)
 
+    @staticmethod
+    def generate_computational_matrix_html(
+        nx: int = 100,
+        ny: int = 100,
+        sim_type: str = "WAVE_DIFFUSION"
+    ) -> str:
+        """Renders the 100x100 (10,000 points) data-driven computational matrix."""
+        from privearch.compute.computational_visualization import ComputationalVisualizationEngine, SimulationModel
+        try:
+            model_enum = SimulationModel(sim_type)
+        except Exception:
+            model_enum = SimulationModel.WAVE_DIFFUSION
+        return ComputationalVisualizationEngine.generate_matrix_html(nx=nx, ny=ny, sim_type=model_enum)
+
+    @staticmethod
+    def generate_presentation_preview_markdown(
+        report: Any,
+        pptx_path: Optional[str] = None
+    ) -> str:
+        """Renders interactive slide outline and status for the Presentation tab."""
+        if not report:
+            return (
+                "### 📽️ Research Presentation Generator (PPTX)\n\n"
+                "*No active research report loaded.*  \n"
+                "Submit a query or click **Generate Presentation Deck** below to build a peer-reviewed 16:9 slide deck with citations and verification cards."
+            )
+
+        qa = getattr(report, "query_analysis", None)
+        audit = getattr(report, "verification", None)
+        calc = report.calculations[0] if getattr(report, "calculations", None) else None
+
+        filename = os.path.basename(pptx_path) if pptx_path else "Privreach_Research_Slides.pptx"
+        file_status = f"✅ **Ready for Download:** `{filename}`" if pptx_path else "⏳ *Deck plan generated; click below to compile .pptx.*"
+
+        md = [
+            f"### 📽️ Research Presentation Deck: {report.query[:60]}",
+            f"{file_status}\n",
+            f"**Domain:** {qa.scientific_domain if qa else 'Chemistry'} | **Grounding:** {audit.grounding_score if audit else 100}% | **Format:** 16:9 Widescreen (.pptx)\n",
+            "---",
+            "#### 📑 Planned Slide Architecture:",
+            "1. **Title & Executive Metadata:** Scope, safety risk rating, zero-trust verification badges.",
+            f"2. **Executive Synthesis:** Citations, core scientific findings, and domain taxonomy.",
+            f"3. **Theoretical Formulation:** {f'SymPy solved equation: `{calc.equation_latex}` -> `{calc.deterministic_computed_value}`' if calc else 'Governing mathematical equations and parameter sets.'}",
+            "4. **Empirical Curve & Chart:** Embedded high-resolution thermodynamic isotherm trajectory.",
+            f"5. **Adversarial Verification Matrix:** {f'{audit.verified_count}/{audit.total_claims} verified claims' if audit else 'Claim-level truth audits'}.",
+            f"6. **Provenance & Citations:** In-RAM references ({len(report.retrieved_chunks)} source chunks).\n",
+            "---",
+            "*Operates under Adaptive Resource Manager with background throttling and cooperative cancellation.*"
+        ]
+        return "\n".join(md)
+

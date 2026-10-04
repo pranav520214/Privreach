@@ -124,15 +124,15 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
                 CanvasGenerator.generate_particle_simulation_html(300, 1.0),
                 [],
                 CanvasGenerator.generate_multimodal_timeline_markdown([]),
+                CanvasGenerator.generate_presentation_preview_markdown(None),
                 "No query provided.",
                 "Ready.",
                 "*No artifacts generated.*",
                 "Retrieved passages will appear here.",
-                "[IDLE] Ready for instructions."
+                kernel.resource_manager.format_console_status()
             )
 
         t_start = time.time()
-        term_logs = [f"[{time.strftime('%H:%M:%S')}] [KERNEL] ⚡ Intercepting query: '{user_query[:50]}...'"]
 
         # 1. Execute RLCD Pipeline with Phase 2 Compute
         report = kernel.execute_rlcd(user_query)
@@ -140,8 +140,6 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
 
         qa = report.query_analysis
         audit = report.verification
-        term_logs.append(f"[{time.strftime('%H:%M:%S')}] [ROUTER] Domain: {qa.scientific_domain} | Risk: {qa.risk_level.value} | Task: {qa.task_type.value}")
-        term_logs.append(f"[{time.strftime('%H:%M:%S')}] [RETRIEVER] Hybrid RRF retrieved {len(report.retrieved_chunks)} passages ({report.execution_stats['stage_timings']['retrieval_ms']}ms)")
 
         # 2. Extract Calculation Data for Canvas
         active_calc = report.calculations[0] if report.calculations else None
@@ -151,14 +149,10 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         computed_float = None
 
         if active_calc and active_calc.deterministic_computed_value:
-            term_logs.append(f"[{time.strftime('%H:%M:%S')}] [COMPUTE] Deterministic SymPy evaluation: {active_calc.equation_latex} -> {active_calc.deterministic_computed_value}")
             try:
                 computed_float = float(active_calc.deterministic_computed_value)
             except ValueError:
                 pass
-
-        term_logs.append(f"[{time.strftime('%H:%M:%S')}] [SYNTHESIS] 4B synthesis generated ({report.execution_stats['stage_timings']['synthesis_ms']}ms)")
-        term_logs.append(f"[{time.strftime('%H:%M:%S')}] [VERIFIER] Adversarial audit complete. Grounding Score: {audit.grounding_score}% ({audit.verified_count}/{audit.total_claims} verified)")
 
         # 3. Canvas Components
         plot_fig = CanvasGenerator.generate_scientific_plot(
@@ -181,6 +175,9 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
 
         # Multimodal Media Timeline
         timeline_md = CanvasGenerator.generate_multimodal_timeline_markdown(report.retrieved_chunks)
+
+        # Presentation Slide Deck Preview
+        presentation_preview_md = CanvasGenerator.generate_presentation_preview_markdown(report)
 
         # Claims Table
         claims_data = []
@@ -233,10 +230,8 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             f"**Keywords:** {', '.join(qa.lexical_keywords)}"
         )
 
-        # Terminal Console Output
-        total_ms = report.execution_stats["total_elapsed_ms"]
-        term_logs.append(f"[{time.strftime('%H:%M:%S')}] [SYSTEM] Pipeline complete in {total_ms}ms. Memory: {report.execution_stats['ram_used_percent']}% RAM | {report.execution_stats['ram_available_gb']} GB Free.")
-        console_output = "\n".join(term_logs)
+        # Terminal Console Output from Adaptive Resource Manager
+        console_output = kernel.resource_manager.format_console_status()
 
         return (
             new_history,
@@ -246,6 +241,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             sim_html,
             claims_data,
             timeline_md,
+            presentation_preview_md,
             router_text,
             f"Grounding Score: **{audit.grounding_score}%** | Verdict: `{audit.overall_verdict}`",
             artifacts_text,
@@ -267,6 +263,80 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         summary = f"**Ingested {len(files)} media file(s):**\n" + "\n".join(msgs)
         vault_status = f"**Vault Total:** {status['indexed_chunks']} chunks across {status['indexed_documents']} media files in RAM."
         return summary, vault_status
+
+    def handle_generate_pptx():
+        """Generates a verified 16:9 widescreen presentation from active research."""
+        rep = active_report_state.get("report")
+        if not rep:
+            return "⚠️ Please run a scientific query first before generating presentation.", gr.update(visible=False), "*No active report.*", kernel.resource_manager.format_console_status()
+        try:
+            res = kernel.create_presentation(query=rep.query, report=rep)
+            file_path = res["file_path"]
+            preview_md = CanvasGenerator.generate_presentation_preview_markdown(rep, pptx_path=file_path)
+
+            art_md_list = ["### 📦 Generated Provenance Artifacts"]
+            for art in kernel.artifact_registry.list_all():
+                art_md_list.append(
+                    f"- **{art.name}** (`{art.artifact_id}`) | `{art.artifact_type.value}`  \n"
+                    f"  *Provenance:* `{art.provenance.get('source_doc', 'Direct')}`"
+                )
+            artifacts_text = "\n\n".join(art_md_list)
+            return preview_md, gr.update(value=file_path, visible=True), artifacts_text, kernel.resource_manager.format_console_status()
+        except Exception as e:
+            return f"❌ PPT Generation failed: {e}", gr.update(visible=False), "*Failed*", kernel.resource_manager.format_console_status()
+
+    def handle_render_matrix_video(res_choice, model_choice):
+        """Renders 100x100 matrix time evolution to MP4 video."""
+        nx, ny = 100, 100
+        if "50" in str(res_choice):
+            nx, ny = 50, 50
+        elif "150" in str(res_choice):
+            nx, ny = 150, 150
+
+        from privearch.compute.computational_visualization import SimulationModel
+        try:
+            sim_model = SimulationModel(model_choice)
+        except Exception:
+            sim_model = SimulationModel.WAVE_DIFFUSION
+
+        try:
+            res = kernel.render_computational_video(sim_type=sim_model, num_frames=60, nx=nx, ny=ny, fps=30)
+            file_path = res["file_path"]
+            art_md_list = ["### 📦 Generated Provenance Artifacts"]
+            for art in kernel.artifact_registry.list_all():
+                art_md_list.append(
+                    f"- **{art.name}** (`{art.artifact_id}`) | `{art.artifact_type.value}`  \n"
+                    f"  *Provenance:* `{art.provenance.get('source_doc', 'Direct')}`"
+                )
+            artifacts_text = "\n\n".join(art_md_list)
+            return f"✅ **Computational Video Rendered:** `{res['filename']}` ({nx}×{ny})", gr.update(value=file_path, visible=True), artifacts_text, kernel.resource_manager.format_console_status()
+        except Exception as e:
+            return f"❌ Video Render failed: {e}", gr.update(visible=False), "*Failed*", kernel.resource_manager.format_console_status()
+
+    def handle_change_matrix_resolution(res_choice, model_choice):
+        nx, ny = 100, 100
+        if "50" in str(res_choice):
+            nx, ny = 50, 50
+        elif "150" in str(res_choice):
+            nx, ny = 150, 150
+        return CanvasGenerator.generate_computational_matrix_html(nx=nx, ny=ny, sim_type=model_choice)
+
+    def handle_change_mode(mode_val):
+        from privearch.resources import AdaptiveMode
+        kernel.resource_manager.set_mode(AdaptiveMode(mode_val))
+        return kernel.resource_manager.format_console_status()
+
+    def handle_pause_background():
+        kernel.resource_manager.pause_all_background()
+        return kernel.resource_manager.format_console_status()
+
+    def handle_resume_background():
+        kernel.resource_manager.resume_all_background()
+        return kernel.resource_manager.format_console_status()
+
+    def handle_stop_all():
+        kernel.resource_manager.cancel_all()
+        return kernel.resource_manager.format_console_status()
 
     # -------------------------------------------------------------
     # GRADIO INTERFACE LAYOUT
@@ -376,6 +446,30 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
                     with gr.TabItem("🎥 Multimodal Timeline & Transcripts"):
                         canvas_multimodal = gr.Markdown(CanvasGenerator.generate_multimodal_timeline_markdown([]))
 
+                    with gr.TabItem("🧮 100×100 Computational Matrix"):
+                        with gr.Row():
+                            matrix_res_select = gr.Dropdown(
+                                choices=["50x50 (2,500 pts)", "100x100 (10,000 pts - Default)", "150x150 (22,500 pts)"],
+                                value="100x100 (10,000 pts - Default)",
+                                label="Resolution Matrix",
+                                scale=2
+                            )
+                            matrix_model_select = gr.Dropdown(
+                                choices=["WAVE_DIFFUSION", "HEAT_CONDUCTION", "QUANTUM_HARMONIC", "REACTION_DIFFUSION"],
+                                value="WAVE_DIFFUSION",
+                                label="Physical Model",
+                                scale=2
+                            )
+                            btn_render_comp_video = gr.Button("🎬 Render MP4", size="sm", scale=1)
+                        canvas_matrix_html = gr.HTML(CanvasGenerator.generate_computational_matrix_html(100, 100, "WAVE_DIFFUSION"))
+                        matrix_video_file = gr.File(label="Download Rendered MP4 Video", visible=False)
+                        matrix_video_status = gr.Markdown("*Ready to render data-driven 60-frame time evolution video.*")
+
+                    with gr.TabItem("📽️ Research Presentation (PPTX)"):
+                        canvas_presentation_preview = gr.Markdown(CanvasGenerator.generate_presentation_preview_markdown(None))
+                        btn_generate_pptx = gr.Button("📊 Compile Verified 16:9 Slide Deck (.pptx)", variant="primary", size="sm")
+                        pptx_file_download = gr.File(label="Download Generated Presentation (.pptx)", visible=False)
+
             # =====================================================
             # PLANE 3 (RIGHT): MEDIA & EVIDENCE VAULT (25%)
             # =====================================================
@@ -404,24 +498,33 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         # ---------------------------------------------------------
         with gr.Row():
             with gr.Column(scale=1):
-                gr.HTML(
-                    """
-                    <div style="font-size: 13px; font-weight: bold; color: #4ade80; margin-bottom: 4px; display: flex; align-items: center; gap: 8px;">
-                      ⌨️ EXECUTION CONSOLE & MODEL TELEMETRY
-                    </div>
-                    """
-                )
+                with gr.Row():
+                    gr.HTML(
+                        """
+                        <div style="font-size: 13px; font-weight: bold; color: #4ade80; display: flex; align-items: center; gap: 8px;">
+                          ⌨️ EXECUTION CONSOLE & ADAPTIVE RESOURCE MANAGER
+                        </div>
+                        """
+                    )
+                    mode_selector = gr.Radio(
+                        choices=["Adaptive", "Balanced", "Performance", "Battery Saver"],
+                        value=kernel.resource_manager.get_mode().value,
+                        label="Operating Mode",
+                        interactive=True
+                    )
+
                 console_output = gr.Code(
-                    value=f"[{time.strftime('%H:%M:%S')}] [SYSTEM] Privreach OS Kernel initialized. Ready for commands.\n"
-                          f"[{time.strftime('%H:%M:%S')}] [ENGINE] 0.5B Router ({kernel.router_model}) | 4B Synthesizer ({kernel.synthesis_model}) | 0.5B Verifier ({kernel.verifier_model})",
+                    value=kernel.resource_manager.format_console_status(),
                     language="shell",
-                    lines=4,
+                    lines=5,
                     show_label=False,
                     elem_classes=["terminal-box"]
                 )
                 with gr.Row():
                     btn_run = gr.Button("▶ Run", variant="primary", size="sm")
                     btn_stop = gr.Button("■ Stop", variant="stop", size="sm")
+                    btn_pause = gr.Button("⏸ Pause", variant="secondary", size="sm")
+                    btn_resume = gr.Button("▶ Resume", variant="secondary", size="sm")
                     btn_rebuild = gr.Button("↻ Re-index Vault", variant="secondary", size="sm")
 
         # ---------------------------------------------------------
@@ -435,6 +538,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             canvas_simulation,
             canvas_claims_table,
             canvas_multimodal,
+            canvas_presentation_preview,
             router_card,
             canvas_status_banner,
             artifacts_box,
@@ -459,7 +563,7 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
         )
 
         clear_btn.click(
-            lambda: ([], "", CanvasGenerator.generate_scientific_plot("", "V", {}), "Derivations cleared.", CanvasGenerator.generate_particle_simulation_html(300, 1.0), [], CanvasGenerator.generate_multimodal_timeline_markdown([]), "Cleared.", "Idle", "*Cleared*", "*Cleared*", "[CONSOLE] Cleared."),
+            lambda: ([], "", CanvasGenerator.generate_scientific_plot("", "V", {}), "Derivations cleared.", CanvasGenerator.generate_particle_simulation_html(300, 1.0), [], CanvasGenerator.generate_multimodal_timeline_markdown([]), CanvasGenerator.generate_presentation_preview_markdown(None), "Cleared.", "Idle", "*Cleared*", "*Cleared*", kernel.resource_manager.format_console_status()),
             outputs=run_outputs
         )
 
@@ -469,8 +573,52 @@ def build_three_plane_app(kernel: Optional[PrivearchKernel] = None) -> gr.Blocks
             outputs=[ingest_msg, vault_status_box]
         )
 
+        btn_generate_pptx.click(
+            handle_generate_pptx,
+            outputs=[canvas_presentation_preview, pptx_file_download, artifacts_box, console_output]
+        )
+
+        btn_render_comp_video.click(
+            handle_render_matrix_video,
+            inputs=[matrix_res_select, matrix_model_select],
+            outputs=[matrix_video_status, matrix_video_file, artifacts_box, console_output]
+        )
+
+        matrix_res_select.change(
+            handle_change_matrix_resolution,
+            inputs=[matrix_res_select, matrix_model_select],
+            outputs=[canvas_matrix_html]
+        )
+
+        matrix_model_select.change(
+            handle_change_matrix_resolution,
+            inputs=[matrix_res_select, matrix_model_select],
+            outputs=[canvas_matrix_html]
+        )
+
+        mode_selector.change(
+            handle_change_mode,
+            inputs=[mode_selector],
+            outputs=[console_output]
+        )
+
+        btn_pause.click(
+            handle_pause_background,
+            outputs=[console_output]
+        )
+
+        btn_resume.click(
+            handle_resume_background,
+            outputs=[console_output]
+        )
+
+        btn_stop.click(
+            handle_stop_all,
+            outputs=[console_output]
+        )
+
         btn_rebuild.click(
-            lambda: f"[{time.strftime('%H:%M:%S')}] [REINDEX] Vault re-indexed. Chunks loaded: {kernel.total_chunks}",
+            lambda: kernel.resource_manager.format_console_status(),
             outputs=[console_output]
         )
 

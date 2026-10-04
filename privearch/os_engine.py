@@ -29,9 +29,12 @@ from privearch.models.query_analyzer import QueryAnalyzer
 from privearch.models.synthesis_engine import SynthesisEngine
 from privearch.models.adversarial_verifier import AdversarialVerifier
 from privearch.tools import ToolGraph
-from privearch.compute import DeterministicSolver, EquationParser
+from privearch.compute import DeterministicSolver, EquationParser, ComputationalVisualizationEngine, SimulationModel
 from privearch.artifacts import ArtifactRegistry
 from privearch.multimodal import VideoProcessor, AudioProcessor, MeetingIntelligenceEngine
+from privearch.resources import ResourceManager, AdaptiveMode, WorkloadPriority, Workload
+from privearch.reports import PresentationGenerator
+from privearch.updater.version import VERSION
 
 
 
@@ -88,6 +91,11 @@ class PrivearchKernel:
         self.video_processor = VideoProcessor()
         self.audio_processor = AudioProcessor()
         self.meeting_engine = MeetingIntelligenceEngine(audio_processor=self.audio_processor)
+
+        # 6. Adaptive Resource Manager, Visualization & Deliverables Subsystem
+        self.resource_manager = ResourceManager(mode=AdaptiveMode.ADAPTIVE)
+        self.visualization_engine = ComputationalVisualizationEngine(artifacts_dir=self.artifact_registry.artifacts_dir)
+        self.presentation_generator = PresentationGenerator(artifacts_registry=self.artifact_registry)
 
         # Ingestion state tracking
         self.ingested_files: List[Dict[str, Any]] = []
@@ -618,11 +626,99 @@ class PrivearchKernel:
             tool_executions=tool_executions
         )
 
-    def get_system_status(self) -> Dict[str, Any]:
-        """Telemetry snapshot of Privearch OS."""
-        mem = psutil.virtual_memory()
+    def create_presentation(
+        self,
+        query: str,
+        report: Optional[PrivearchReport] = None,
+        is_interactive: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Executes deterministic presentation generation under the Adaptive Resource Manager.
+        Builds a verified 16:9 widescreen PPTX slide deck with equations, charts, and citations.
+        """
+        active_report = report or self.execute_rlcd(query)
+
+        def _workload_fn(w: Workload):
+            return self.presentation_generator.generate_presentation(
+                query=query,
+                report=active_report,
+                workload=w,
+                resource_manager=self.resource_manager
+            )
+
+        pptx_path = self.resource_manager.execute_sync(
+            name=f"Presentation: {query[:35]}",
+            workload_type="ppt_generation",
+            fn=_workload_fn,
+            priority=WorkloadPriority.HIGH if is_interactive else WorkloadPriority.LOW,
+            is_interactive=is_interactive
+        )
+
         return {
-            "version": "1.1.0",
+            "status": "success",
+            "file_path": pptx_path,
+            "filename": os.path.basename(pptx_path),
+            "report": active_report
+        }
+
+    def render_computational_video(
+        self,
+        sim_type: SimulationModel = SimulationModel.WAVE_DIFFUSION,
+        num_frames: int = 60,
+        nx: int = 100,
+        ny: int = 100,
+        fps: int = 30,
+        output_name: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Renders data-driven 100x100 matrix time-evolution into MP4 video under the Resource Manager.
+        """
+        out_file = output_name or f"sim_{sim_type.value.lower()}_{int(time.time())}.mp4"
+
+        def _workload_fn(w: Workload):
+            return self.visualization_engine.render_computational_video(
+                output_name=out_file,
+                num_frames=num_frames,
+                nx=nx,
+                ny=ny,
+                fps=fps,
+                sim_type=sim_type,
+                workload=w,
+                resource_manager=self.resource_manager
+            )
+
+        video_path = self.resource_manager.execute_sync(
+            name=f"Visualization: {sim_type.value}",
+            workload_type="visualization_rendering",
+            fn=_workload_fn,
+            priority=WorkloadPriority.MEDIUM,
+            is_interactive=True
+        )
+
+        # Register artifact
+        art = self.artifact_registry.register_artifact(
+            name=f"Simulation Video: {sim_type.value}",
+            artifact_type=ArtifactType.VIDEO_EXPLAINER,
+            content=video_path,
+            provenance={"model": sim_type.value, "points": nx * ny, "frames": num_frames, "fps": fps},
+            description=f"Deterministic {nx}x{ny} computational simulation video rendered via FFmpeg."
+        )
+
+        return {
+            "status": "success",
+            "file_path": video_path,
+            "filename": out_file,
+            "artifact_id": art.artifact_id
+        }
+
+    def get_system_status(self) -> Dict[str, Any]:
+        """Telemetry and resource management snapshot of Privearch OS."""
+        mem = psutil.virtual_memory()
+        telemetry = self.resource_manager.get_telemetry()
+        constraints = self.resource_manager.get_constraints()
+
+        return {
+            "version": VERSION,
             "airgap_mode": self.config.zero_trust_airgap,
             "indexed_documents": len(self.ingested_files),
             "indexed_chunks": self.total_chunks,
@@ -633,6 +729,12 @@ class PrivearchKernel:
             "verifier_model": self.verifier_model,
             "embedding_engine": self.config.embedding_backend,
             "host_ram_used_percent": mem.percent,
-            "host_ram_free_gb": round(mem.available / (1024**3), 2)
+            "host_ram_free_gb": round(mem.available / (1024**3), 2),
+            "adaptive_mode": self.resource_manager.get_mode().value,
+            "system_stress_score": telemetry.get("stress_score", 0.0),
+            "impact_level": constraints.get("impact_level", "OPTIMAL"),
+            "active_workloads": len(self.resource_manager.get_active_workloads()),
+            "matrix_resolution": constraints.get("matrix_resolution", (100, 100)),
+            "fps_limit": constraints.get("fps_limit", 30)
         }
 
