@@ -57,7 +57,8 @@ def display_welcome(kernel: PrivearchKernel):
     console.print(table)
     console.print()
     console.print("[dim yellow]💡 Instructions: Drag & drop any PDF path into the prompt, or enter a scientific question.[/dim yellow]")
-    console.print("[dim yellow]   Commands: /scan (ingest current dir PDFs)  |  /status  |  /update (OTA check)  |  /exit[/dim yellow]\n")
+    console.print("[dim yellow]   Commands: /scan (ingest PDFs)  |  /status  |  /engine (manage models)  |  /update  |  /exit[/dim yellow]\n")
+
 
 
 def display_rlcd_report(report):
@@ -159,6 +160,20 @@ def display_rlcd_report(report):
 def run_cli():
     """Main CLI loop."""
     config = PrivearchConfig()
+    
+    # Check if local inference engine is running / installed
+    from privearch.models.engine_installer import is_engine_running, find_ollama_executable, bootstrap_system
+    if not is_engine_running():
+        console.print("[bold yellow]⚠️ Local AI Inference Engine (Ollama) is not running or not installed.[/bold yellow]")
+        do_setup = Prompt.ask(
+            "[bold cyan]Would you like Privearch to automatically download, install, and configure Ollama now?[/bold cyan]",
+            choices=["y", "n"],
+            default="y"
+        )
+        if do_setup == "y":
+            from privearch.models.engine_installer import main as engine_setup_main
+            engine_setup_main()
+
     console.print("[dim cyan]Booting Privearch OS Kernel...[/dim cyan]")
     try:
         kernel = PrivearchKernel(config)
@@ -167,6 +182,7 @@ def run_cli():
         sys.exit(1)
 
     display_welcome(kernel)
+
 
     # Check if there are local PDFs in the chemistry directory and suggest ingest
     current_dir = os.path.abspath(".")
@@ -218,6 +234,11 @@ def run_cli():
             run_ota_cli()
             continue
 
+        if user_input.lower() in ["/engine", "/models", "/setup-engine"]:
+            from privearch.models.engine_installer import main as engine_setup_main
+            engine_setup_main()
+            continue
+
         if user_input.lower().startswith("/scan") or user_input.lower().startswith("/ingest-all"):
             console.print("[cyan]Scanning and ingesting all PDFs in current directory...[/cyan]")
             for f in os.listdir("."):
@@ -255,9 +276,13 @@ def run_cli():
 
 
 if __name__ == "__main__":
-    if "--update" in sys.argv or "-u" in sys.argv:
+    if "--setup-engine" in sys.argv or "--engine" in sys.argv:
+        from privearch.models.engine_installer import main as engine_setup_main
+        engine_setup_main()
+    elif "--update" in sys.argv or "-u" in sys.argv:
         from privearch.updater.cli_updater import main as updater_main
         updater_main()
     else:
         run_cli()
+
 

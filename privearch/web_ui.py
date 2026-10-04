@@ -7,6 +7,14 @@ from privearch.os_engine import PrivearchKernel
 from privearch.schemas import VerificationStatus, RiskLevel
 from privearch.updater.version import VERSION, BUILD_CHANNEL, RELEASE_DATE, DEFAULT_OTA_MANIFEST_URL
 from privearch.updater.ota_manager import OTAManager
+from privearch.models.engine_installer import (
+    is_engine_running,
+    find_ollama_executable,
+    list_installed_models,
+    bootstrap_system,
+    pull_model
+)
+
 
 
 def build_app(kernel: PrivearchKernel):
@@ -164,6 +172,44 @@ def build_app(kernel: PrivearchKernel):
         else:
             return f"### ❌ Rollback Failed\n\n{msg}"
 
+    def handle_engine_status():
+        running = is_engine_running()
+        ollama_bin = find_ollama_executable()
+        models = list_installed_models() if running else []
+        badge = "ONLINE ✓ (Port 11434)" if running else "OFFLINE / NOT RUNNING ⚠️"
+        color = "green" if running else "red"
+        status_md = f"### ⚡ Local AI Engine Status: **<span style='color:{color}'>{badge}</span>**\n\n"
+        status_md += f"- **Executable:** `{ollama_bin or 'Not Installed'}`\n"
+        status_md += f"- **Endpoint:** `http://127.0.0.1:11434` (Strict Local Airgap)\n"
+        status_md += f"- **Installed Models ({len(models)}):** "
+        status_md += ", ".join(f"`{m}`" for m in models) if models else "*None detected*"
+        return status_md
+
+    def handle_engine_auto_setup():
+        ok, msg = bootstrap_system(silent=True)
+        running = is_engine_running()
+        models = list_installed_models() if running else []
+        if ok:
+            return (
+                f"### 🎉 Local AI Engine Configured Successfully!\n\n"
+                f"- **Status:** Online on port 11434\n"
+                f"- **Available Models:** {', '.join(f'`{m}`' for m in models)}\n\n"
+                f"*{msg}*"
+            )
+        else:
+            return f"### ❌ Setup Encountered an Error\n\n`{msg}`"
+
+    def handle_pull_custom_model(model_name):
+        if not model_name or not model_name.strip():
+            return "Please provide a valid model name (e.g. `llama3.2:1b`, `medgemma:4b`)."
+        clean = model_name.strip()
+        ok, msg = pull_model(clean)
+        if ok:
+            return f"### ✓ Successfully downloaded `{clean}`!\n\nIt is now available for synthesis in Privearch."
+        else:
+            return f"### ❌ Download Failed\n\n`{msg}`"
+
+
     with gr.Blocks(title="Privearch OS - Zero-Trust Scientific Synthesis") as demo:
         gr.Markdown(
             f"""
@@ -266,6 +312,35 @@ def build_app(kernel: PrivearchKernel):
                     inputs=[],
                     outputs=[ota_result_md]
                 )
+
+            with gr.TabItem("⚡ AI Engine & Self-Setup"):
+                gr.Markdown(
+                    """
+                    ### ⚡ Zero-Friction Local AI Engine (100% Free & Self-Contained)
+                    Privearch executes completely locally. If Ollama or the required models 
+                    (`qwen2.5:0.5b` + `qwen2.5-coder:3b`) are not installed or configured, 
+                    click below to automatically download and configure them with zero manual terminal commands.
+                    """
+                )
+                engine_status_box = gr.Markdown(handle_engine_status())
+                with gr.Row():
+                    refresh_engine_btn = gr.Button("🔄 Refresh Status", variant="secondary")
+                    auto_install_btn = gr.Button("⚡ 1-Click Auto Install Engine & Models", variant="primary")
+
+                engine_output_md = gr.Markdown("")
+
+                with gr.Row():
+                    custom_model_input = gr.Textbox(
+                        label="Download Additional Local Model (Free)",
+                        placeholder="e.g. llama3.2:1b, medgemma:4b, qwen3.5:4b",
+                        lines=1
+                    )
+                    pull_model_btn = gr.Button("📥 Download Model", variant="secondary")
+
+                refresh_engine_btn.click(handle_engine_status, inputs=[], outputs=[engine_status_box])
+                auto_install_btn.click(handle_engine_auto_setup, inputs=[], outputs=[engine_output_md])
+                pull_model_btn.click(handle_pull_custom_model, inputs=[custom_model_input], outputs=[engine_output_md])
+
 
         submit_btn.click(
             handle_query,

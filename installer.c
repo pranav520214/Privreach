@@ -234,9 +234,22 @@ int main(int argc, char *argv[]) {
         printf("      ✓ You can now type 'privearch' or 'privearch-terminal' in any terminal!\n\n");
     }
 
+    // 6. Check Local AI Engine
+    printf("[6/6] Checking Local AI Engine...\n");
+    char ollama_check[MAX_PATH];
+    snprintf(ollama_check, sizeof(ollama_check), "%s\\Programs\\Ollama\\ollama.exe", local_app_data);
+    if (PathFileExistsA(ollama_check)) {
+        printf("      ✓ Local Ollama inference engine detected.\n\n");
+    } else {
+        printf("      ! Ollama engine not detected.\n");
+        printf("      Privearch will automatically download and install Ollama and models\n");
+        printf("      on first launch with zero manual setup required!\n\n");
+    }
+
     create_uninstaller_script(install_dir);
 
     CoUninitialize();
+
 
     printf("======================================================================\n");
     printf("  🎉 INSTALLATION COMPLETE!\n");

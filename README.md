@@ -92,10 +92,23 @@ Privearch is available as native Windows `.exe` executables with custom applicat
 ```cmd
 Privearch.exe            :: Launch Modern Web Dashboard (Default)
 Privearch.exe --cli      :: Launch Interactive Rich Terminal OS
+Privearch.exe --engine   :: Auto-Install & Configure Local Ollama Engine & Models
 Privearch.exe --update   :: Over-The-Air (OTA) System Updater
 Privearch.exe --vault    :: Re-index all scientific PDFs into Vault
 Privearch.exe --help     :: Show launcher help
 ```
+
+---
+
+## ⚡ Zero-Friction Self-Installing AI Engine
+
+Privearch eliminates all manual AI setup:
+- **100% Free & Local**: No paid API keys, no subscriptions, no external cloud dependencies.
+- **Automatic Engine Provisioning**: If Ollama is not installed on the system, Privearch automatically downloads the official Windows installer and executes it silently.
+- **Automated Model Pulling**: Automatically fetches the required models (`qwen2.5:0.5b` and `qwen2.5-coder:3b`) with real-time download and verification bars.
+- **1-Click Web Management**: Manage, status-check, or pull additional models (e.g. `llama3.2:1b`, `medgemma:4b`, `qwen3.5:4b`) directly from the **"⚡ AI Engine & Self-Setup"** tab in the Web Dashboard.
+- **Terminal Management**: Run `/engine` inside the Terminal OS or execute `Privearch.exe --engine`.
+
 
 ---
 

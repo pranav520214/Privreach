@@ -5,5 +5,5 @@
   "min_compatible_version": "1.0.0",
   "changelog": "### Privearch v1.0.0 Stable Release\n- Dual-Model Brain-Trust (0.5B Router + 4B Synthesizer + 0.5B Verifier)\n- 100% Local Airgap (Zero Cloud Compute, CPU embeddings + 4GB VRAM)\n- Hybrid In-RAM Retrieval (Okapi BM25 + FAISS RRF)\n- Pre-Indexed 29 NCERT Chemistry Textbooks (2,280 semantic chunks)\n- Native Windows Executables (Privearch.exe, Privearch-Terminal.exe, Privearch-Setup.exe)\n- Zero-Trust Over-The-Air (OTA) Update Engine with Automatic Rollback",
   "download_url": "https://github.com/pranav520214/Privreach/releases/download/v1.0.0/privearch-ota-v1.0.0.zip",
-  "sha256": "66d2d902d4ebcf95ca9e0bd8cf29072b6c311b77dbd514e0490e307ae7777be9"
+  "sha256": "7609337b5dba5b334955e7f37def7773348a1eb497f0e37650feeb1f2f16c14d"
 }

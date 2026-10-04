@@ -42,58 +42,15 @@ static int is_port_listening(int port) {
     return (res == 0);
 }
 
-static void ensure_ollama_running(void) {
-    if (is_port_listening(11434)) {
-        return;
-    }
-
-    printf("[INFO] Starting local Ollama service in background...\n");
-    // Search for ollama.exe
-    char ollama_path[MAX_PATH];
-    if (SearchPathA(NULL, "ollama.exe", NULL, MAX_PATH, ollama_path, NULL) == 0) {
-        // Fallback to standard AppData location
-        char user_profile[MAX_PATH];
-        if (GetEnvironmentVariableA("LOCALAPPDATA", user_profile, MAX_PATH) > 0) {
-            snprintf(ollama_path, MAX_PATH, "%s\\Programs\\Ollama\\ollama.exe", user_profile);
-        } else {
-            strcpy(ollama_path, "ollama.exe");
-        }
-    }
-
-    STARTUPINFOA si;
-    PROCESS_INFORMATION pi;
-    ZeroMemory(&si, sizeof(si));
-    si.cb = sizeof(si);
-    si.dwFlags = STARTF_USESHOWWINDOW;
-    si.wShowWindow = SW_HIDE;
-    ZeroMemory(&pi, sizeof(pi));
-
-    char cmd[MAX_PATH + 32];
-    snprintf(cmd, sizeof(cmd), "\"%s\" serve", ollama_path);
-
-    if (CreateProcessA(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
-        CloseHandle(pi.hProcess);
-        CloseHandle(pi.hThread);
-        // Wait up to 3 seconds for server to bind
-        for (int i = 0; i < 6; i++) {
-            Sleep(500);
-            if (is_port_listening(11434)) break;
-        }
-    }
-}
-
 static int find_python(char *out_path, size_t max_len) {
-    // 1. Check env override
     if (GetEnvironmentVariableA("PRIVEARCH_PYTHON", out_path, (DWORD)max_len) > 0) {
         if (GetFileAttributesA(out_path) != INVALID_FILE_ATTRIBUTES) return 1;
     }
 
-    // 2. Search on system PATH
     if (SearchPathA(NULL, "python.exe", NULL, (DWORD)max_len, out_path, NULL) > 0) {
         return 1;
     }
 
-    // 3. Check common AppData / local Python install paths
     char local_app_data[MAX_PATH];
     if (GetEnvironmentVariableA("LOCALAPPDATA", local_app_data, MAX_PATH) > 0) {
         char candidate[MAX_PATH];
@@ -109,9 +66,59 @@ static int find_python(char *out_path, size_t max_len) {
         }
     }
 
-    // Fallback to generic "python"
     strncpy(out_path, "python.exe", max_len);
     return 1;
+}
+
+static void ensure_ollama_running(const char *python_path) {
+    if (is_port_listening(11434)) {
+        return;
+    }
+
+    char ollama_path[MAX_PATH];
+    int found_ollama = (SearchPathA(NULL, "ollama.exe", NULL, MAX_PATH, ollama_path, NULL) != 0);
+    if (!found_ollama) {
+        char user_profile[MAX_PATH];
+        if (GetEnvironmentVariableA("LOCALAPPDATA", user_profile, MAX_PATH) > 0) {
+            snprintf(ollama_path, MAX_PATH, "%s\\Programs\\Ollama\\ollama.exe", user_profile);
+            if (GetFileAttributesA(ollama_path) != INVALID_FILE_ATTRIBUTES) {
+                found_ollama = 1;
+            }
+        }
+    }
+
+    if (!found_ollama) {
+        printf("\n========================================================\n");
+        printf("  ⚡ LOCAL AI ENGINE NOT DETECTED\n");
+        printf("  Privearch will now automatically download and\n");
+        printf("  install Ollama and configure the models for you.\n");
+        printf("========================================================\n\n");
+        char auto_cmd[MAX_PATH * 3];
+        snprintf(auto_cmd, sizeof(auto_cmd), "\"%s\" -m privearch.models.engine_installer --auto", python_path);
+        system(auto_cmd);
+        return;
+    }
+
+    printf("[INFO] Starting local Ollama service in background...\n");
+    STARTUPINFOA si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+    si.dwFlags = STARTF_USESHOWWINDOW;
+    si.wShowWindow = SW_HIDE;
+    ZeroMemory(&pi, sizeof(pi));
+
+    char cmd[MAX_PATH + 32];
+    snprintf(cmd, sizeof(cmd), "\"%s\" serve", ollama_path);
+
+    if (CreateProcessA(NULL, cmd, NULL, NULL, FALSE, CREATE_NO_WINDOW, NULL, NULL, &si, &pi)) {
+        CloseHandle(pi.hProcess);
+        CloseHandle(pi.hThread);
+        for (int i = 0; i < 10; i++) {
+            Sleep(500);
+            if (is_port_listening(11434)) break;
+        }
+    }
 }
 
 static void get_app_dir(char *out_dir, size_t max_len) {
@@ -130,12 +137,11 @@ static DWORD WINAPI open_browser_thread(LPVOID param) {
     // Wait briefly for Gradio server to listen
     for (int i = 0; i < 20; i++) {
         Sleep(500);
-        if (is_port_listening(7860)) {
+        if (is_port_listening(7860) || is_port_listening(7861)) {
             ShellExecuteA(NULL, "open", DEFAULT_URL, NULL, NULL, SW_SHOWNORMAL);
             return 0;
         }
     }
-    // Fallback open anyway
     ShellExecuteA(NULL, "open", DEFAULT_URL, NULL, NULL, SW_SHOWNORMAL);
     return 0;
 }
@@ -151,11 +157,12 @@ int main(int argc, char *argv[]) {
     char python_path[MAX_PATH];
     find_python(python_path, sizeof(python_path));
 
-    ensure_ollama_running();
+    ensure_ollama_running(python_path);
 
     int mode_cli = 0;
     int mode_vault = 0;
     int mode_update = 0;
+    int mode_engine = 0;
 
     for (int i = 1; i < argc; i++) {
         if (strcmp(argv[i], "--cli") == 0 || strcmp(argv[i], "-c") == 0) {
@@ -164,6 +171,8 @@ int main(int argc, char *argv[]) {
             mode_vault = 1;
         } else if (strcmp(argv[i], "--update") == 0 || strcmp(argv[i], "-u") == 0) {
             mode_update = 1;
+        } else if (strcmp(argv[i], "--engine") == 0 || strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--setup-engine") == 0) {
+            mode_engine = 1;
         } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
             printf("\n========================================================\n");
             printf("  ⚡ PRIVEARCH OPERATING SYSTEM LAUNCHER\n");
@@ -172,6 +181,7 @@ int main(int argc, char *argv[]) {
             printf("Options:\n");
             printf("  (none)       Launch Modern Web Dashboard (Default)\n");
             printf("  --cli,    -c Launch Interactive Rich Terminal OS\n");
+            printf("  --engine, -e Setup/Install Local AI Engine & Models\n");
             printf("  --vault,  -v Re-index all scientific PDFs into Vault\n");
             printf("  --update, -u Over-The-Air (OTA) System Updater\n");
             printf("  --help,   -h Show this help dialog\n\n");
@@ -191,10 +201,12 @@ int main(int argc, char *argv[]) {
     } else if (mode_update) {
         snprintf(target_script, sizeof(target_script), "privearch.updater");
         snprintf(command_line, sizeof(command_line), "\"%s\" -m privearch.updater", python_path);
+    } else if (mode_engine) {
+        snprintf(target_script, sizeof(target_script), "privearch.models.engine_installer");
+        snprintf(command_line, sizeof(command_line), "\"%s\" -m privearch.models.engine_installer", python_path);
     } else {
         snprintf(target_script, sizeof(target_script), "run_web.py");
         snprintf(command_line, sizeof(command_line), "\"%s\" \"%s\\%s\"", python_path, app_dir, target_script);
-        // Spawn asynchronous browser opener
         CreateThread(NULL, 0, open_browser_thread, NULL, 0, NULL);
     }
 
@@ -203,6 +215,7 @@ int main(int argc, char *argv[]) {
         if (strcmp(argv[i], "--cli") == 0 || strcmp(argv[i], "-c") == 0) continue;
         if (strcmp(argv[i], "--vault") == 0 || strcmp(argv[i], "-v") == 0) continue;
         if (strcmp(argv[i], "--update") == 0 || strcmp(argv[i], "-u") == 0) continue;
+        if (strcmp(argv[i], "--engine") == 0 || strcmp(argv[i], "-e") == 0 || strcmp(argv[i], "--setup-engine") == 0) continue;
         if (strcmp(argv[i], "--web") == 0 || strcmp(argv[i], "-w") == 0) continue;
         strncat(command_line, " ", sizeof(command_line) - strlen(command_line) - 1);
         strncat(command_line, argv[i], sizeof(command_line) - strlen(command_line) - 1);

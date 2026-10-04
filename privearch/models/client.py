@@ -33,27 +33,9 @@ class LocalModelClient:
         """Automatically boot local Ollama server if not currently active."""
         if self.is_available():
             return True
-        import os
-        import subprocess
-        import shutil
-        import time
+        from privearch.models.engine_installer import start_ollama_daemon
+        return start_ollama_daemon()
 
-        ollama_bin = shutil.which("ollama") or os.path.expanduser(r"~\AppData\Local\Programs\Ollama\ollama.exe")
-        if os.path.exists(ollama_bin):
-            try:
-                subprocess.Popen(
-                    [ollama_bin, "serve"],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
-                    creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
-                )
-                for _ in range(10):
-                    time.sleep(0.6)
-                    if self.is_available():
-                        return True
-            except Exception:
-                pass
-        return self.is_available()
 
     def list_models(self) -> List[str]:
         """List currently downloaded local models."""
