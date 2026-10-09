@@ -251,9 +251,11 @@ public class PrivearchApiService
             };
 
             string? standaloneEngine = engineExeCandidates.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
+            App.LogStartup($"EnsureServerProcessRunningAsync: standaloneEngine candidate = '{standaloneEngine}'");
 
             if (standaloneEngine != null)
             {
+                App.LogStartup($"EnsureServerProcessRunningAsync: Starting process {standaloneEngine} on 127.0.0.1:8765");
                 var psi = new ProcessStartInfo
                 {
                     FileName = standaloneEngine,
@@ -263,6 +265,7 @@ public class PrivearchApiService
                     UseShellExecute = false
                 };
                 _serverProcess = Process.Start(psi);
+                App.LogStartup($"EnsureServerProcessRunningAsync: Process started with PID {_serverProcess?.Id}");
             }
             else if (repoRoot != null)
             {
@@ -311,6 +314,7 @@ public class PrivearchApiService
         }
         catch (Exception ex)
         {
+            App.LogStartup($"Failed to auto-launch server: {ex.Message}\n{ex.StackTrace}");
             Debug.WriteLine($"Failed to auto-launch server: {ex.Message}");
         }
     }

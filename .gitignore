@@ -32,6 +32,10 @@ privearch/
 *.log
 EBWebView/
 
+# Models & Binaries
+/models/
+PrivreachOS.spec
+
 # OS / Editor
 .DS_Store
 Thumbs.db

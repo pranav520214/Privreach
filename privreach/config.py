@@ -14,9 +14,9 @@ class PrivearchConfig:
     router_model: str = os.getenv("PRIVEARCH_ROUTER_MODEL", "qwen2.5:0.5b")
     router_fallbacks: List[str] = field(default_factory=lambda: ["qwen2.5:0.5b", "llama3.2:1b", "qwen2.5-coder:1.5b-instruct"])
 
-    # 4B heavier model for deep scientific synthesis
-    synthesis_model: str = os.getenv("PRIVEARCH_SYNTHESIS_MODEL", "qwen2.5-coder:3b")
-    synthesis_fallbacks: List[str] = field(default_factory=lambda: ["qwen2.5-coder:3b", "qwen3.5:4b", "medgemma:4b", "gemma3:4b"])
+    # 1B-4B heavy model for deep scientific synthesis
+    synthesis_model: str = os.getenv("PRIVEARCH_SYNTHESIS_MODEL", "google/gemma-3-1b-it")
+    synthesis_fallbacks: List[str] = field(default_factory=lambda: ["google/gemma-3-1b-it", "gemma3:1b", "qwen2.5-coder:3b", "medgemma:4b"])
 
     # 0.5B adversarial verifier
     verifier_model: str = os.getenv("PRIVEARCH_VERIFIER_MODEL", "qwen2.5:0.5b")

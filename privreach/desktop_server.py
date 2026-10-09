@@ -68,6 +68,14 @@ async def api_status(request: Request) -> JSONResponse:
         port = 11434
     ollama_ok = is_engine_running(port=port)
     
+    try:
+        from privreach.models.gemma_engine import GemmaInProcessEngine
+        gemma_ok = GemmaInProcessEngine.get_instance().is_available()
+    except Exception:
+        gemma_ok = False
+
+    engine_active = gemma_ok or ollama_ok
+    
     # Process memory
     proc = psutil.Process()
     ram_mb = round(proc.memory_info().rss / (1024 * 1024), 1)
@@ -87,7 +95,8 @@ async def api_status(request: Request) -> JSONResponse:
 
     return JSONResponse({
         "status": "online",
-        "engine_running": ollama_ok,
+        "engine_running": engine_active,
+        "gemma_embedded": gemma_ok,
         "ollama_port": port,
         "router_model": kernel.router_model,
         "synthesis_model": kernel.synthesis_model,

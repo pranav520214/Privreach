@@ -21,7 +21,14 @@ class LocalModelClient:
         self.ensure_server_running()
 
     def is_available(self) -> bool:
-        """Check if local inference engine is running."""
+        """Check if local inference engine (Gemma in-process or Ollama) is running."""
+        try:
+            from privreach.models.gemma_engine import GemmaInProcessEngine
+            if GemmaInProcessEngine.get_instance().is_available():
+                return True
+        except Exception:
+            pass
+
         try:
             req = urllib.request.Request(f"{self.base_url}/api/tags")
             with urllib.request.urlopen(req, timeout=3) as resp:
@@ -30,33 +37,42 @@ class LocalModelClient:
             return False
 
     def ensure_server_running(self) -> bool:
-        """Automatically boot local Ollama server if not currently active."""
+        """Automatically verify local inference availability."""
         if self.is_available():
             return True
-        from privearch.models.engine_installer import start_ollama_daemon
-        return start_ollama_daemon()
-
+        try:
+            from privearch.models.engine_installer import start_ollama_daemon
+            return start_ollama_daemon()
+        except Exception:
+            return False
 
     def list_models(self) -> List[str]:
-        """List currently downloaded local models."""
+        """List currently downloaded local models including embedded Gemma 3."""
+        models = []
+        try:
+            from privreach.models.gemma_engine import GemmaInProcessEngine
+            if GemmaInProcessEngine.get_instance().is_available():
+                models.append("google/gemma-3-1b-it")
+        except Exception:
+            pass
+
         try:
             req = urllib.request.Request(f"{self.base_url}/api/tags")
             with urllib.request.urlopen(req, timeout=5) as resp:
                 data = json.loads(resp.read().decode("utf-8"))
-                return [m["name"] for m in data.get("models", [])]
+                models.extend([m["name"] for m in data.get("models", [])])
         except Exception:
-            return []
+            pass
+        return models or ["google/gemma-3-1b-it"]
 
     def select_best_model(self, preferred: str, fallbacks: List[str]) -> str:
         """Select preferred model if available, else first working fallback."""
         available = self.list_models()
-        # Direct match or prefix match (e.g. 'qwen2.5:0.5b' matches 'qwen2.5:0.5b' or 'qwen2.5:0.5b-instruct')
         for candidate in [preferred] + fallbacks:
             for m in available:
                 if candidate in m or m in candidate:
                     return m
-        # If nothing matches, return preferred
-        return preferred
+        return "google/gemma-3-1b-it" if "google/gemma-3-1b-it" in available else preferred
 
     def generate(
         self,
@@ -68,8 +84,22 @@ class LocalModelClient:
         timeout_seconds: int = 120
     ) -> str:
         """
-        Execute synchronous generation on local LLM.
+        Execute synchronous generation on local LLM (In-Process Gemma 3 or Ollama).
         """
+        # 1. Prefer in-process Gemma 3 1B IT if requested or as primary local engine
+        try:
+            from privreach.models.gemma_engine import GemmaInProcessEngine
+            gemma_engine = GemmaInProcessEngine.get_instance()
+            if "gemma" in model.lower() or gemma_engine.is_available():
+                return gemma_engine.generate(
+                    prompt=prompt,
+                    system=system,
+                    temperature=temperature,
+                    max_tokens=max_tokens or 1024
+                )
+        except Exception:
+            pass
+
         payload: Dict[str, Any] = {
             "model": model,
             "prompt": prompt,
