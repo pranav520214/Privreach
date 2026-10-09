@@ -382,9 +382,63 @@ public partial class MainPageViewModel : ObservableObject
     [RelayCommand]
     public async Task StartOllamaAsync()
     {
-        StatusMessage = "Starting local Ollama engine...";
-        await _api.StartEngineAsync();
-        await Task.Delay(2000);
+        IsBusy = true;
+        StatusMessage = "Starting local Ollama AI Engine...";
+        bool ok = await _api.StartEngineAsync();
+        StatusMessage = ok ? "Local Ollama engine signal sent." : "Failed to trigger Ollama engine start.";
+        IsBusy = false;
         await RefreshStatusAsync();
+    }
+
+    [RelayCommand]
+    public async Task ClearVaultAsync()
+    {
+        IsBusy = true;
+        StatusMessage = "Clearing knowledge vault and resetting index...";
+        bool ok = await _api.ClearVaultAsync();
+        if (ok)
+        {
+            Documents.Clear();
+            RetrievedChunks.Clear();
+            Claims.Clear();
+            ActivePdfDocName = "No Document Loaded";
+            ActivePdfUrl = "about:blank";
+            StatusMessage = "Knowledge vault cleared. Ready for fresh documents.";
+        }
+        else
+        {
+            StatusMessage = "Failed to clear knowledge vault.";
+        }
+        IsBusy = false;
+        await RefreshStatusAsync();
+        await RefreshDocumentsAsync();
+    }
+
+    [ObservableProperty]
+    private string _updaterNotificationText = "";
+
+    [ObservableProperty]
+    private bool _hasUpdaterNotification;
+
+    [RelayCommand]
+    public async Task CheckForUpdatesAsync()
+    {
+        StatusMessage = "Checking for system updates and patches...";
+        var res = await _api.CheckForUpdatesAsync();
+        if (res != null)
+        {
+            if (res.HasUpdate)
+            {
+                UpdaterNotificationText = $"Update v{res.LatestVersion} Available! {res.Changelog}";
+                HasUpdaterNotification = true;
+                StatusMessage = $"Update available: v{res.LatestVersion}";
+            }
+            else
+            {
+                UpdaterNotificationText = $"Privreach OS is up to date (v{res.CurrentVersion}).";
+                HasUpdaterNotification = true;
+                StatusMessage = $"System is up to date (v{res.CurrentVersion}).";
+            }
+        }
     }
 }

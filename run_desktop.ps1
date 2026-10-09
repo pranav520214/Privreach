@@ -30,6 +30,8 @@ if (-not $portListening) {
     Write-Host '[1/2] Local Engine already online on port 8765.' -ForegroundColor Green
 }
 
+$desktopExe = Join-Path $repoRoot 'PrivreachDesktop\bin\x64\Debug\net8.0-windows10.0.26100.0\win-x64\PrivreachDesktop.exe'
+
 # 2. Launch Native WinUI 3 Application
 $runningApp = Get-Process PrivreachDesktop -ErrorAction SilentlyContinue
 if ($runningApp) {
@@ -39,7 +41,11 @@ if ($runningApp) {
 }
 
 Write-Host '[2/2] Launching WinUI 3 Native Workstation...' -ForegroundColor Yellow
-winapp run $desktopProj --detach --json | Out-Null
+if (Test-Path $desktopExe) {
+    Start-Process $desktopExe
+} else {
+    winapp run $desktopProj --detach --json | Out-Null
+}
 
 Write-Host '[OK] Privreach Workstation launched successfully!' -ForegroundColor Green
 Write-Host 'Zero-Trust Air-Gapped Operation | CPU Embeddings + 4GB VRAM' -ForegroundColor Gray

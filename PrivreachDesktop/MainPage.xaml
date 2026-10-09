@@ -9,9 +9,14 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+          AllowDrop="True"
+          DragOver="RootGrid_DragOver"
+          Drop="RootGrid_Drop">
         <Grid.RowDefinitions>
             <!-- Top Command & Status Ribbon -->
+            <RowDefinition Height="Auto" />
+            <!-- System Update & Alert InfoBar -->
             <RowDefinition Height="Auto" />
             <!-- Three-Plane Workstation Body -->
             <RowDefinition Height="*" />
@@ -74,6 +79,18 @@
                             <TextBlock Text="Ingest PDF" />
                         </StackPanel>
                     </Button>
+                    <Button Command="{x:Bind ViewModel.ClearVaultCommand}" ToolTipService.ToolTip="Clear Knowledge Vault &amp; Reset Index">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE74D;" FontSize="14" Foreground="#f87171" />
+                            <TextBlock Text="Clear Vault" />
+                        </StackPanel>
+                    </Button>
+                    <Button Command="{x:Bind ViewModel.CheckForUpdatesCommand}" ToolTipService.ToolTip="Check for Updates &amp; System Patches">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <FontIcon Glyph="&#xE895;" FontSize="14" />
+                            <TextBlock Text="Updates" />
+                        </StackPanel>
+                    </Button>
                     <Button Command="{x:Bind ViewModel.RefreshStatusCommand}" ToolTipService.ToolTip="Refresh Status">
                         <FontIcon Glyph="&#xE72C;" FontSize="14" />
                     </Button>
@@ -81,8 +98,17 @@
             </Grid>
         </Border>
 
+        <!-- NOTIFICATION INFOBAR -->
+        <InfoBar Grid.Row="1"
+                 IsOpen="{x:Bind ViewModel.HasUpdaterNotification, Mode=TwoWay}"
+                 Severity="Informational"
+                 Title="Privreach OS Update"
+                 Message="{x:Bind ViewModel.UpdaterNotificationText, Mode=OneWay}"
+                 IsClosable="True"
+                 Margin="16,6,16,6" />
+
         <!-- THREE-PLANE WORKSTATION BODY -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <!-- PLANE 1: Left - Inquiry, Router & AI Dock (360px) -->
                 <ColumnDefinition Width="360" MinWidth="300" MaxWidth="440" />
@@ -831,7 +857,7 @@
         </Grid>
 
         <!-- BOTTOM STATUS BAR -->
-        <Border Grid.Row="2"
+        <Border Grid.Row="3"
                 Padding="16,6"
                 BorderThickness="0,1,0,0"
                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"

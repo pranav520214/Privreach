@@ -189,10 +189,25 @@ public class PrivearchApiService
         }
     }
 
+    public async Task<bool> ClearVaultAsync()
+    {
+        try
+        {
+            var res = await _httpClient.PostAsync("/api/vault/clear", null).ConfigureAwait(false);
+            return res.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public void EnsureServerProcessRunning()
     {
         Task.Run(EnsureServerProcessRunningAsync);
     }
+
+    private static Process? _serverProcess;
 
     public async Task EnsureServerProcessRunningAsync()
     {
@@ -214,7 +229,10 @@ public class PrivearchApiService
             string? repoRoot = null;
             while (dir != null)
             {
-                if (File.Exists(Path.Combine(dir.FullName, "requirements.txt")) && Directory.Exists(Path.Combine(dir.FullName, "privearch")))
+                if (Directory.Exists(Path.Combine(dir.FullName, "privreach")) ||
+                    Directory.Exists(Path.Combine(dir.FullName, "privearch")) ||
+                    File.Exists(Path.Combine(dir.FullName, "pyproject.toml")) ||
+                    File.Exists(Path.Combine(dir.FullName, "requirements.txt")))
                 {
                     repoRoot = dir.FullName;
                     break;
@@ -224,10 +242,24 @@ public class PrivearchApiService
 
             if (repoRoot != null)
             {
-                var pythonExe = Path.Combine(repoRoot, @"venv\Scripts\python.exe");
-                var serverScript = Path.Combine(repoRoot, @"privearch\desktop_server.py");
+                string[] pythonCandidates =
+                {
+                    Path.Combine(repoRoot, @"venv\Scripts\python.exe"),
+                    Path.Combine(repoRoot, @".venv\Scripts\python.exe"),
+                    "python.exe"
+                };
 
-                if (File.Exists(pythonExe) && File.Exists(serverScript))
+                string? pythonExe = pythonCandidates.FirstOrDefault(File.Exists) ?? "python.exe";
+
+                string[] scriptCandidates =
+                {
+                    Path.Combine(repoRoot, @"privreach\desktop_server.py"),
+                    Path.Combine(repoRoot, @"privearch\desktop_server.py")
+                };
+
+                string? serverScript = scriptCandidates.FirstOrDefault(File.Exists);
+
+                if (serverScript != null)
                 {
                     var psi = new ProcessStartInfo
                     {
@@ -238,8 +270,18 @@ public class PrivearchApiService
                         UseShellExecute = false
                     };
                     psi.EnvironmentVariables["PYTHONPATH"] = repoRoot;
-                    Process.Start(psi);
-                    await Task.Delay(2000).ConfigureAwait(false);
+                    _serverProcess = Process.Start(psi);
+
+                    // Poll until server is ready (up to 10 seconds)
+                    for (int i = 0; i < 20; i++)
+                    {
+                        await Task.Delay(500).ConfigureAwait(false);
+                        var testStatus = await GetStatusAsync().ConfigureAwait(false);
+                        if (testStatus != null)
+                        {
+                            break;
+                        }
+                    }
                 }
             }
         }

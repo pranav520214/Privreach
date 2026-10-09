@@ -17,9 +17,15 @@ public sealed partial class MainWindow : Window
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(IntPtr hWnd);
 
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool SetForegroundWindow(IntPtr hWnd);
+
     private readonly List<string> _availableCommands = new()
     {
         "Ingest Scientific PDF Textbook...",
+        "Clear Knowledge Vault & Reset Cache",
+        "Check for Updates & System Patches",
         "Switch Model: Qwen 2.5 Coder 3B",
         "Switch Model: MedGemma 4B (Clinical)",
         "Start Local Ollama AI Engine",
@@ -70,6 +76,8 @@ public sealed partial class MainWindow : Window
             int widthPx = Math.Max(1200, (int)(1480 * scale));
             int heightPx = Math.Max(800, (int)(920 * scale));
             AppWindow.Resize(new SizeInt32(widthPx, heightPx));
+            AppWindow.Show(true);
+            SetForegroundWindow(hwnd);
             App.LogStartup($"MainWindow: AppWindow.Resize completed ({widthPx}x{heightPx}, hwnd=0x{hwnd:X})");
         }
         catch (Exception ex)
@@ -134,7 +142,15 @@ public sealed partial class MainWindow : Window
         var vm = mainPage?.ViewModel;
         if (vm == null) return;
 
-        if (cmd.Contains("qwen2.5-coder:3b") || cmd.Contains("Qwen"))
+        if (cmd.Contains("clear") || cmd.Contains("Clear"))
+        {
+            await vm.ClearVaultAsync();
+        }
+        else if (cmd.Contains("update") || cmd.Contains("Update"))
+        {
+            await vm.CheckForUpdatesAsync();
+        }
+        else if (cmd.Contains("qwen2.5-coder:3b") || cmd.Contains("Qwen"))
         {
             await vm.SwitchModelAsync("qwen2.5-coder:3b");
         }

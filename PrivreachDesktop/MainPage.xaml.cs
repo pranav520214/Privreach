@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Windows.Storage.Pickers;
+using Windows.ApplicationModel.DataTransfer;
 using PrivreachDesktop.Models;
 using PrivreachDesktop.ViewModels;
 
@@ -133,6 +134,36 @@ public sealed partial class MainPage : Page
         if (sender is ComboBox cb && cb.SelectedItem is string newModel && newModel != ViewModel.SelectedSynthesisModel)
         {
             await ViewModel.SwitchModelAsync(newModel);
+        }
+    }
+
+    private void RootGrid_DragOver(object sender, DragEventArgs e)
+    {
+        if (e.DataView.Contains(StandardDataFormats.StorageItems))
+        {
+            e.AcceptedOperation = DataPackageOperation.Copy;
+            e.DragUIOverride.Caption = "Drop to Ingest into Knowledge Vault";
+            e.DragUIOverride.IsCaptionVisible = true;
+            e.DragUIOverride.IsGlyphVisible = true;
+        }
+    }
+
+    private async void RootGrid_Drop(object sender, DragEventArgs e)
+    {
+        if (e.DataView.Contains(StandardDataFormats.StorageItems))
+        {
+            var items = await e.DataView.GetStorageItemsAsync();
+            foreach (var item in items)
+            {
+                if (item is Windows.Storage.StorageFile file)
+                {
+                    var ext = Path.GetExtension(file.Path).ToLowerInvariant();
+                    if (ext == ".pdf" || ext == ".mp4" || ext == ".mp3" || ext == ".wav")
+                    {
+                        await ViewModel.IngestFileAsync(file.Path);
+                    }
+                }
+            }
         }
     }
 

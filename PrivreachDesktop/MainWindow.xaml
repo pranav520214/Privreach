@@ -52,6 +52,8 @@
                           IsItemClickEnabled="True">
                     <ListView.Items>
                         <ListViewItem Content="📄 Ingest Scientific PDF Textbook..." Tag="ingest" />
+                        <ListViewItem Content="🗑️ Clear Knowledge Vault &amp; Reset Index" Tag="clear_vault" />
+                        <ListViewItem Content="🚀 Check for System Updates &amp; Patches" Tag="check_updates" />
                         <ListViewItem Content="🧠 Switch Model: Qwen 2.5 Coder 3B" Tag="qwen2.5-coder:3b" />
                         <ListViewItem Content="🩺 Switch Model: MedGemma 4B (Clinical)" Tag="medgemma:4b" />
                         <ListViewItem Content="⚡ Start Local Ollama AI Engine" Tag="start_ollama" />
