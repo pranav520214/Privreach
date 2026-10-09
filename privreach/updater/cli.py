@@ -12,7 +12,14 @@ from privreach.updater.updater_service import get_updater_service
 from privreach.updater.patch_builder import PatchBuilder
 from privreach.updater.version import VERSION, BUILD_CHANNEL, RELEASE_DATE
 
-console = Console()
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
+console = Console(force_terminal=True, legacy_windows=False)
 
 
 def display_status():
@@ -41,14 +48,14 @@ def check_updates():
 
     if res.has_update:
         console.print(Panel(
-            f"[bold green]✓ Update Available: v{res.latest_version}[/bold green]\n"
+            f"[bold green][UPDATE] Available: v{res.latest_version}[/bold green]\n"
             f"Channel: {res.channel}\n"
             f"Changelog:\n{res.changelog or 'Bug fixes and performance enhancements.'}",
             title="[bold yellow]NEW RELEASE[/bold yellow]",
             border_style="green"
         ))
     else:
-        console.print(f"[bold green]✓ {res.message}[/bold green]")
+        console.print(f"[bold green][OK] {res.message}[/bold green]")
 
 
 def list_snapshots():
@@ -82,7 +89,7 @@ def apply_patch(patch_file: str):
 
     if res.success:
         console.print(Panel(
-            f"[bold green]✓ Patch Applied Successfully![/bold green]\n"
+            f"[bold green][OK] Patch Applied Successfully![/bold green]\n"
             f"Patch ID: {res.patch_id}\n"
             f"Target Version: v{res.target_version}\n"
             f"Files Modified: {len(res.files_modified)}\n"
@@ -93,7 +100,7 @@ def apply_patch(patch_file: str):
         ))
     else:
         console.print(Panel(
-            f"[bold red]✗ Patch Application Failed:[/bold red]\n{res.message}\n"
+            f"[bold red][ERROR] Patch Application Failed:[/bold red]\n{res.message}\n"
             f"Error: {res.error}",
             title="[bold red]PATCH ERROR[/bold red]",
             border_style="red"
@@ -106,11 +113,11 @@ def rollback(snapshot_id: str = None):
     res = service.rollback_to_snapshot(snapshot_id)
 
     if res.success:
-        console.print(f"[bold green]✓ {res.message}[/bold green]")
+        console.print(f"[bold green][OK] {res.message}[/bold green]")
         for f in res.restored_files:
-            console.print(f"  [dim]• Restored: {f}[/dim]")
+            console.print(f"  [dim]* Restored: {f}[/dim]")
     else:
-        console.print(f"[bold red]✗ Rollback failed: {res.message}[/bold red]")
+        console.print(f"[bold red][ERROR] Rollback failed: {res.message}[/bold red]")
 
 
 def build_patch_cmd(patch_id: str, title: str, files: list, output: str):
@@ -123,7 +130,7 @@ def build_patch_cmd(patch_id: str, title: str, files: list, output: str):
         file_paths=files
     )
     bundle_path = builder.export_patch_bundle(manifest, output)
-    console.print(f"[bold green]✓ Patch bundle compiled: {bundle_path}[/bold green]")
+    console.print(f"[bold green][OK] Patch bundle compiled: {bundle_path}[/bold green]")
 
 
 def main():
