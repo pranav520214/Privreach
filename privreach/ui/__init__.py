@@ -7,10 +7,13 @@ from privearch.config import PrivearchConfig
 from privearch.os_engine import PrivearchKernel
 from privearch.ui.canvas_protocol import CanvasPayload, CanvasViewType
 from privearch.ui.canvas_generator import CanvasGenerator
-try:
-    from privearch.ui.three_plane_app import build_three_plane_app
-except ImportError:
-    build_three_plane_app = None
+def build_three_plane_app(*args, **kwargs):
+    """Lazy load gradio app if explicitly requested."""
+    try:
+        from privearch.ui.three_plane_app import build_three_plane_app as _builder
+        return _builder(*args, **kwargs)
+    except Exception as e:
+        raise ImportError(f"Web Gradio UI is not available: {e}")
 
 
 

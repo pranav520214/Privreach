@@ -240,7 +240,31 @@ public class PrivearchApiService
                 dir = dir.Parent;
             }
 
-            if (repoRoot != null)
+            // 1. Check if compiled standalone backend binary exists
+            string[] engineExeCandidates =
+            {
+                Path.Combine(appDir, "privreach_engine", "privreach_engine.exe"),
+                Path.Combine(appDir, "engine", "privreach_engine.exe"),
+                Path.Combine(appDir, "privreach_engine.exe"),
+                repoRoot != null ? Path.Combine(repoRoot, @"dist\privreach_engine\privreach_engine.exe") : "",
+                repoRoot != null ? Path.Combine(repoRoot, "privreach_engine.exe") : ""
+            };
+
+            string? standaloneEngine = engineExeCandidates.FirstOrDefault(p => !string.IsNullOrEmpty(p) && File.Exists(p));
+
+            if (standaloneEngine != null)
+            {
+                var psi = new ProcessStartInfo
+                {
+                    FileName = standaloneEngine,
+                    Arguments = "127.0.0.1 8765",
+                    WorkingDirectory = Path.GetDirectoryName(standaloneEngine)!,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                _serverProcess = Process.Start(psi);
+            }
+            else if (repoRoot != null)
             {
                 string[] pythonCandidates =
                 {
@@ -271,17 +295,17 @@ public class PrivearchApiService
                     };
                     psi.EnvironmentVariables["PYTHONPATH"] = repoRoot;
                     _serverProcess = Process.Start(psi);
+                }
+            }
 
-                    // Poll until server is ready (up to 10 seconds)
-                    for (int i = 0; i < 20; i++)
-                    {
-                        await Task.Delay(500).ConfigureAwait(false);
-                        var testStatus = await GetStatusAsync().ConfigureAwait(false);
-                        if (testStatus != null)
-                        {
-                            break;
-                        }
-                    }
+            // Poll until server is ready (up to 15 seconds)
+            for (int i = 0; i < 30; i++)
+            {
+                await Task.Delay(500).ConfigureAwait(false);
+                var testStatus = await GetStatusAsync().ConfigureAwait(false);
+                if (testStatus != null)
+                {
+                    break;
                 }
             }
         }
