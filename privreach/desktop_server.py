@@ -514,6 +514,18 @@ async def api_updater_snapshots(request: Request) -> JSONResponse:
     return JSONResponse([s.model_dump() for s in snaps])
 
 
+async def api_vault_clear(request: Request) -> JSONResponse:
+    """Clear all indexed documents, chunks, vectors, and graph nodes for a completely fresh start."""
+    kernel = get_kernel()
+    success = kernel.clear_index(delete_cache_files=True)
+    return JSONResponse({
+        "success": success,
+        "message": "Knowledge vault completely cleared. Index is fresh and ready for new documents.",
+        "total_chunks": 0,
+        "total_documents": 0
+    })
+
+
 routes = [
     Route("/api/status", api_status, methods=["GET"]),
     Route("/api/documents", api_documents, methods=["GET"]),
@@ -525,6 +537,7 @@ routes = [
     Route("/api/models/switch", api_switch_model, methods=["POST"]),
     Route("/api/engine/start", api_start_engine, methods=["POST"]),
     Route("/api/graph", api_graph, methods=["GET"]),
+    Route("/api/vault/clear", api_vault_clear, methods=["POST"]),
     # Modern Updater Endpoints
     Route("/api/updater/status", api_updater_status, methods=["GET"]),
     Route("/api/updater/check", api_updater_check, methods=["POST"]),

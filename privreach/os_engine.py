@@ -181,6 +181,29 @@ class PrivearchKernel:
             print(f"[Warning] Failed to load index cache: {e}")
             return False
 
+    def clear_index(self, delete_cache_files: bool = True) -> bool:
+        """
+        Wipe all in-RAM indexed chunks, dense vectors, and knowledge graph entities.
+        If delete_cache_files is True, also clears cached files on disk for a completely fresh start.
+        """
+        self.bm25.clear()
+        self.vector_index.clear()
+        self.graph_engine = KnowledgeGraphEngine()
+        self.ingested_files = []
+        self.total_chunks = 0
+
+        if delete_cache_files:
+            for cdir in [self.cache_dir, os.path.abspath(".privreach_cache"), os.path.abspath(".privearch_cache")]:
+                if os.path.exists(cdir):
+                    for fname in ["chunks.json", "vectors.npy", "manifest.json", "graph.json"]:
+                        fpath = os.path.join(cdir, fname)
+                        if os.path.isfile(fpath):
+                            try:
+                                os.remove(fpath)
+                            except Exception as e:
+                                print(f"[Warning] Failed to delete {fpath}: {e}")
+        return True
+
     def ingest_pdf(self, pdf_path: str, force: bool = False, auto_save: bool = True) -> Dict[str, Any]:
         """
         Dynamically ingest a PDF file into RAM:
