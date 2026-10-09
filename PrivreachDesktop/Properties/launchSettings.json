@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "PrivreachDesktop (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "PrivreachDesktop (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# .NET / WinUI 3
+bin/
+obj/
+*.user
+*.suo
+*.useros
+.vs/
+AppPackages/
+BundleArtifacts/
+Package.StoreAssociation.xml
+_pkg/
+
+# Privreach OS Runtime & Cache
+.privreach_cache/
+.privearch_cache/
+.privreach_media_cache/
+.privreach_snapshots/
+.privreach_backup/
+privearch/
+*.log
+EBWebView/
+
+# OS / Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
