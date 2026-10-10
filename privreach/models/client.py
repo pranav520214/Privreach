@@ -86,19 +86,32 @@ class LocalModelClient:
         """
         Execute synchronous generation on local LLM (In-Process Gemma 3 or Ollama).
         """
-        # 1. Prefer in-process Gemma 3 1B IT if requested or as primary local engine
-        try:
-            from privreach.models.gemma_engine import GemmaInProcessEngine
-            gemma_engine = GemmaInProcessEngine.get_instance()
-            if "gemma" in model.lower() or gemma_engine.is_available():
-                return gemma_engine.generate(
-                    prompt=prompt,
-                    system=system,
-                    temperature=temperature,
-                    max_tokens=max_tokens or 1024
-                )
-        except Exception:
-            pass
+        # 1. Prefer in-process Gemma 3 1B IT if requested or if Ollama is unreachable
+        use_gemma = "gemma" in model.lower()
+        if not use_gemma:
+            try:
+                req = urllib.request.Request(f"{self.base_url}/api/tags")
+                with urllib.request.urlopen(req, timeout=1.5) as resp:
+                    data = json.loads(resp.read().decode("utf-8"))
+                    ollama_models = [m["name"] for m in data.get("models", [])]
+                    if not any(model in m or m in model for m in ollama_models):
+                        use_gemma = True
+            except Exception:
+                use_gemma = True
+
+        if use_gemma:
+            try:
+                from privreach.models.gemma_engine import GemmaInProcessEngine
+                gemma_engine = GemmaInProcessEngine.get_instance()
+                if gemma_engine.is_available():
+                    return gemma_engine.generate(
+                        prompt=prompt,
+                        system=system,
+                        temperature=temperature,
+                        max_tokens=max_tokens or 1024
+                    )
+            except Exception:
+                pass
 
         payload: Dict[str, Any] = {
             "model": model,

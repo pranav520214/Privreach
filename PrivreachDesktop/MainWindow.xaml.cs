@@ -12,8 +12,10 @@ using PrivreachDesktop.ViewModels;
 
 namespace PrivreachDesktop;
 
-public sealed partial class MainWindow : Window
+public sealed partial class MainWindow : Window, System.ComponentModel.INotifyPropertyChanged
 {
+    public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
     [DllImport("user32.dll")]
     private static extern uint GetDpiForWindow(IntPtr hWnd);
 
@@ -33,6 +35,20 @@ public sealed partial class MainWindow : Window
         "Toggle Zero-Trust Airgap Policy"
     };
 
+    private string _selectedDomainDisplay = "✈️ Aerospace Research ▾";
+    public string SelectedDomainDisplay
+    {
+        get => _selectedDomainDisplay;
+        set
+        {
+            if (_selectedDomainDisplay != value)
+            {
+                _selectedDomainDisplay = value;
+                PropertyChanged?.Invoke(this, new System.ComponentModel.PropertyChangedEventArgs(nameof(SelectedDomainDisplay)));
+            }
+        }
+    }
+
     public MainWindow()
     {
         App.LogStartup("MainWindow: constructor started");
@@ -42,7 +58,7 @@ public sealed partial class MainWindow : Window
         try
         {
             ExtendsContentIntoTitleBar = true;
-            SetTitleBar(AppTitleBar);
+            SetTitleBar(TitleDragArea);
             App.LogStartup("MainWindow: SetTitleBar completed");
         }
         catch (Exception ex)
@@ -134,6 +150,58 @@ public sealed partial class MainWindow : Window
         {
             ExecuteCommand(text);
         }
+    }
+
+    private async void OpenCommandPalette_Click(object sender, RoutedEventArgs e)
+    {
+        CommandPaletteDialog.XamlRoot = Content.XamlRoot;
+        await CommandPaletteDialog.ShowAsync();
+    }
+
+    private void HeaderQuickSearchBox_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            var text = HeaderQuickSearchBox.Text?.Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                var mainPage = RootFrame.Content as MainPage;
+                if (mainPage?.ViewModel != null)
+                {
+                    mainPage.ViewModel.QueryText = text;
+                    _ = mainPage.ViewModel.ExecuteQueryAsync();
+                }
+            }
+        }
+    }
+
+    private void DomainMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is MenuFlyoutItem item)
+        {
+            var domainName = item.Tag as string ?? item.Text;
+            SelectedDomainDisplay = $"{item.Text} ▾";
+            var mainPage = RootFrame.Content as MainPage;
+            if (mainPage != null)
+            {
+                mainPage.SetDomain(domainName);
+            }
+        }
+    }
+
+    private async void NotificationsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var mainPage = RootFrame.Content as MainPage;
+        if (mainPage?.ViewModel != null)
+        {
+            await mainPage.ViewModel.CheckForUpdatesAsync();
+        }
+    }
+
+    private async void SettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        CommandPaletteDialog.XamlRoot = Content.XamlRoot;
+        await CommandPaletteDialog.ShowAsync();
     }
 
     private async void ExecuteCommand(string cmd)

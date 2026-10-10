@@ -48,8 +48,13 @@ class EquationParser:
             clean = eq.strip()
             # Filter out non-math code or assignments
             if clean and not clean.startswith(("def ", "class ", "import ", "for ", "if ")):
-                if len(clean) > 3 and clean not in equations:
-                    equations.append(clean)
+                # Truncate at natural clause boundaries
+                clean = re.split(r'\b(?:where|with|for|given|when|assuming|let)\b|[;,.\n]', clean, flags=re.IGNORECASE)[0].strip()
+                if len(clean) > 3 and "=" in clean and clean not in equations:
+                    # Prefer expressions that have algebraic operators or formulas on the RHS
+                    rhs = clean.split("=", 1)[1].strip()
+                    if any(op in rhs for op in ["+", "-", "*", "/", "^", "(", ")"]) or re.search(r'[A-Za-z]', rhs):
+                        equations.append(clean)
 
         return equations
 

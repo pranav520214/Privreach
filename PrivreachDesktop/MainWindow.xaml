@@ -13,21 +13,170 @@
         <MicaBackdrop />
     </Window.SystemBackdrop>
 
-    <Grid>
+    <Grid Background="{StaticResource CanvasBackgroundBrush}">
         <Grid.KeyboardAccelerators>
             <KeyboardAccelerator Key="K" Modifiers="Control" Invoked="OpenCommandPalette_Invoked" />
         </Grid.KeyboardAccelerators>
 
         <Grid.RowDefinitions>
+            <!-- Top Workstation Navigation Header -->
             <RowDefinition Height="Auto" />
+            <!-- Main Workspace Frame -->
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <TitleBar x:Name="AppTitleBar" Title="Privreach OS — Zero-Trust Scientific Workstation">
-            <TitleBar.IconSource>
-                <ImageIconSource ImageSource="ms-appx:///Assets/AppIcon.ico" />
-            </TitleBar.IconSource>
-        </TitleBar>
+        <!-- TOP WORKSTATION NAVIGATION HEADER -->
+        <Border Grid.Row="0"
+                Background="{StaticResource SurfaceWhiteBrush}"
+                BorderBrush="{StaticResource BorderSubtleBrush}"
+                BorderThickness="0,0,0,1"
+                Padding="16,8,16,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <!-- Left: Brand Logo & Title -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Drag Spacer Area -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Center: Search Pill Bar -->
+                    <ColumnDefinition Width="Auto" />
+                    <!-- Drag Spacer Area -->
+                    <ColumnDefinition Width="*" />
+                    <!-- Right: Domain Selector & Quick Actions -->
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <!-- Invisible Drag Region spanning the header -->
+                <Grid x:Name="TitleDragArea" Grid.ColumnSpan="5" Background="Transparent" />
+
+                <!-- Left: Brand Logo & Title -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <Border Width="34" Height="34"
+                            CornerRadius="8"
+                            Background="{StaticResource AccentBluePillFillBrush}"
+                            BorderBrush="{StaticResource AccentBluePillStrokeBrush}"
+                            BorderThickness="1"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center">
+                        <FontIcon Glyph="&#xE709;" FontSize="16" Foreground="{StaticResource AccentBluePrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+                    <StackPanel VerticalAlignment="Center" Spacing="1">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Privreach"
+                                       FontSize="15"
+                                       FontWeight="Bold"
+                                       Foreground="{StaticResource TextNavyPrimaryBrush}"
+                                       VerticalAlignment="Center" />
+                            <Border Background="{StaticResource StatusGreenFillBrush}"
+                                    BorderBrush="{StaticResource StatusGreenStrokeBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="4"
+                                    Padding="5,1"
+                                    VerticalAlignment="Center">
+                                <TextBlock Text="OS v2.0" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource StatusGreenBrush}" />
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Text="Your Private Research Operating Environment"
+                                   FontSize="11"
+                                   Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Center: Interactive Search Pill -->
+                <Border Grid.Column="2"
+                        Width="440"
+                        Height="36"
+                        CornerRadius="18"
+                        Background="{StaticResource SurfaceWhiteBrush}"
+                        BorderBrush="{StaticResource BorderSubtleBrush}"
+                        BorderThickness="1"
+                        Padding="12,0,8,0"
+                        VerticalAlignment="Center">
+                    <Grid VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <FontIcon Glyph="&#xE721;" FontSize="13" Foreground="{StaticResource TextMutedTertiaryBrush}" VerticalAlignment="Center" Margin="0,0,8,0" />
+                        
+                        <TextBox x:Name="HeaderQuickSearchBox"
+                                 Grid.Column="1"
+                                 PlaceholderText="Search research, files, or ask a question..."
+                                 Background="Transparent"
+                                 BorderThickness="0"
+                                 FontSize="12"
+                                 VerticalAlignment="Center"
+                                 Padding="0"
+                                 KeyDown="HeaderQuickSearchBox_KeyDown" />
+
+                        <Button Grid.Column="2"
+                                Padding="6,2"
+                                Height="22"
+                                Background="{StaticResource SurfaceSoftGreyBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                Click="OpenCommandPalette_Click"
+                                ToolTipService.ToolTip="Open Command Palette (Ctrl+K)">
+                            <TextBlock Text="Ctrl+K" FontSize="10" Foreground="{StaticResource TextSlateSecondaryBrush}" FontWeight="SemiBold" />
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Right: Domain Selector & Quick Actions -->
+                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <!-- Domain Selector Dropdown Pill -->
+                    <DropDownButton x:Name="DomainDropDownButton"
+                                    Content="{x:Bind SelectedDomainDisplay, Mode=OneWay}"
+                                    Background="{StaticResource AccentBluePillFillBrush}"
+                                    Foreground="{StaticResource AccentBluePrimaryBrush}"
+                                    BorderBrush="{StaticResource AccentBluePillStrokeBrush}"
+                                    BorderThickness="1"
+                                    CornerRadius="16"
+                                    FontSize="12"
+                                    FontWeight="SemiBold"
+                                    Padding="12,5">
+                        <DropDownButton.Flyout>
+                            <MenuFlyout Placement="Bottom">
+                                <MenuFlyoutItem Text="✈️ Aerospace Research" Click="DomainMenuItem_Click" Tag="Aerospace" />
+                                <MenuFlyoutItem Text="⚛️ Physics &amp; Thermodynamics" Click="DomainMenuItem_Click" Tag="Physics" />
+                                <MenuFlyoutItem Text="🧬 Molecular Biology &amp; Genetics" Click="DomainMenuItem_Click" Tag="Biology" />
+                                <MenuFlyoutItem Text="🧪 Chemical Synthesis &amp; Kinetics" Click="DomainMenuItem_Click" Tag="Chemistry" />
+                                <MenuFlyoutItem Text="🤖 Robotics &amp; Control Theory" Click="DomainMenuItem_Click" Tag="Robotics" />
+                                <MenuFlyoutItem Text="💻 Computer Science &amp; AI" Click="DomainMenuItem_Click" Tag="Computer Science" />
+                                <MenuFlyoutItem Text="🧱 Materials Science" Click="DomainMenuItem_Click" Tag="Materials Science" />
+                                <MenuFlyoutItem Text="📐 Mathematics &amp; Algebra" Click="DomainMenuItem_Click" Tag="Mathematics" />
+                            </MenuFlyout>
+                        </DropDownButton.Flyout>
+                    </DropDownButton>
+
+                    <!-- Notifications Bell Button -->
+                    <Button Width="34" Height="34"
+                            Padding="0"
+                            Background="{StaticResource SurfaceWhiteBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Click="NotificationsButton_Click"
+                            ToolTipService.ToolTip="System Notifications &amp; Alerts">
+                        <FontIcon Glyph="&#xEA8F;" FontSize="14" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                    </Button>
+
+                    <!-- Settings Gear Button -->
+                    <Button Width="34" Height="34"
+                            Padding="0"
+                            Background="{StaticResource SurfaceWhiteBrush}"
+                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                            BorderThickness="1"
+                            CornerRadius="8"
+                            Click="SettingsButton_Click"
+                            ToolTipService.ToolTip="Workstation Settings">
+                        <FontIcon Glyph="&#xE713;" FontSize="14" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
         <!-- Main Workspace Frame -->
         <Frame x:Name="RootFrame" Grid.Row="1" />

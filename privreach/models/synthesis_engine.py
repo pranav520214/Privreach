@@ -74,11 +74,28 @@ class SynthesisEngine:
         Synthesize answer with bracketed citations and optional R1 / CoT thought stream.
         """
         if not retrieved_chunks:
+            calc_intro = ""
+            if injected_calc_context:
+                calc_intro = f"\n{injected_calc_context}\n\n"
+            base_prompt = (
+                f"You are Privreach OS. Answer the following scientific research inquiry accurately.\n"
+                f"{calc_intro}"
+                f"Query: {query}\n\nAnswer:"
+            )
+            try:
+                direct_ans = self.client.generate(
+                    self.model_name,
+                    prompt=base_prompt,
+                    system=SYNTHESIS_SYSTEM_PROMPT,
+                    max_tokens=1024
+                )
+            except Exception as e:
+                direct_ans = f"Local model inference error: {e}"
             return SynthesisOutput(
                 text=(
-                    "### Ingestion Required\n\n"
-                    "No scientific documents have been ingested yet into the RAM index. "
-                    "Please drag and drop a PDF into Privearch to enable zero-hallucination synthesis."
+                    "> ⚠️ **Notice: Knowledge Vault is empty.**\n"
+                    "> Ingest a PDF document or textbook (via drag-and-drop or PDF Ingester) to enable literature-grounded RLCD verification.\n\n"
+                    + direct_ans
                 )
             )
 

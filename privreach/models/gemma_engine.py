@@ -30,7 +30,10 @@ class GemmaInProcessEngine:
     @staticmethod
     def discover_model_path() -> Optional[str]:
         """Search standard candidate locations for Gemma 3 1B GGUF weights."""
+        repo_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         candidates = [
+            os.path.join(repo_root, "models", "gemma-3-1b-it-q4_k_m.gguf"),
+            r"E:\PrivreachOS\models\gemma-3-1b-it-q4_k_m.gguf",
             os.path.join(os.getcwd(), "models", "gemma-3-1b-it-q4_k_m.gguf"),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "models", "gemma-3-1b-it-q4_k_m.gguf"),
             os.path.join(os.path.dirname(os.path.abspath(__file__)), "gemma-3-1b-it-q4_k_m.gguf"),

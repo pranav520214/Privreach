@@ -11,6 +11,9 @@ public class SystemStatusDto
     [JsonPropertyName("engine_running")]
     public bool EngineRunning { get; set; }
 
+    [JsonPropertyName("gemma_embedded")]
+    public bool GemmaEmbedded { get; set; }
+
     [JsonPropertyName("ollama_port")]
     public int OllamaPort { get; set; } = 11434;
 

@@ -49,12 +49,8 @@ def main():
     except Exception:
         pass
 
-    desktop_exe = os.path.join(repo_root, "PrivreachDesktop", "bin", "x64", "Debug", "net8.0-windows10.0.26100.0", "win-x64", "PrivreachDesktop.exe")
     print("[2/2] Launching WinUI 3 Native Desktop Workstation...")
-    if os.path.exists(desktop_exe):
-        subprocess.Popen([desktop_exe], cwd=os.path.dirname(desktop_exe))
-    else:
-        subprocess.run(["winapp", "run", desktop_proj, "--detach", "--json"], cwd=repo_root)
+    subprocess.run(["winapp", "run", desktop_proj, "--detach", "--json"], cwd=repo_root)
     print("[OK] Privreach Workstation launched successfully!")
     print("Zero-Trust Air-Gapped Operation | CPU Embeddings + 4GB VRAM")
 

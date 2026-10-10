@@ -582,13 +582,23 @@ class PrivearchKernel:
         target_eq = equations[0] if equations else ""
         target_var = "ans"
         if target_eq and (variables or is_calc_task):
-            for ent in analysis.key_entities:
-                if len(ent) <= 4 and ent.isalnum():
-                    target_var = ent
-                    break
+            # 1. First priority: LHS of equation if it is not in the known variables
+            if "=" in target_eq:
+                lhs = target_eq.split("=")[0].strip()
+                if len(lhs) <= 6 and lhs.replace("_", "").isalnum() and lhs not in variables:
+                    target_var = lhs
+
+            # 2. Second priority: Key entity not in known variables
+            if target_var == "ans":
+                for ent in analysis.key_entities:
+                    if len(ent) <= 4 and ent.isalnum() and ent not in variables:
+                        target_var = ent
+                        break
+
+            # 3. Third priority: Any clean LHS
             if target_var == "ans" and "=" in target_eq:
                 lhs = target_eq.split("=")[0].strip()
-                if len(lhs) <= 4 and lhs.isalnum():
+                if len(lhs) <= 6 and lhs.replace("_", "").isalnum():
                     target_var = lhs
 
             calc_val, formula_str, derivation_code = self.solver.solve_equation(

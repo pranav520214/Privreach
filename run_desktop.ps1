@@ -41,11 +41,7 @@ if ($runningApp) {
 }
 
 Write-Host '[2/2] Launching WinUI 3 Native Workstation...' -ForegroundColor Yellow
-if (Test-Path $desktopExe) {
-    Start-Process $desktopExe
-} else {
-    winapp run $desktopProj --detach --json | Out-Null
-}
+winapp run $desktopProj --detach --json | Out-Null
 
 Write-Host '[OK] Privreach Workstation launched successfully!' -ForegroundColor Green
 Write-Host 'Zero-Trust Air-Gapped Operation | CPU Embeddings + 4GB VRAM' -ForegroundColor Gray

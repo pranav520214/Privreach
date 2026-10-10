@@ -26,14 +26,19 @@ _pkg/
 .privreach_cache/
 .privearch_cache/
 .privreach_media_cache/
+.privearch_media_cache/
+.privearch_artifacts/
 .privreach_snapshots/
 .privreach_backup/
 privearch/
 *.log
 EBWebView/
 
-# Models & Binaries
+# Models & Large Media Binaries (>100MB)
 /models/
+*.mov
+*.wav
+*.gguf
 PrivreachOS.spec
 
 # OS / Editor

@@ -14,6 +14,10 @@ import sys
 import time
 import json
 
+repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding="utf-8")
@@ -133,13 +137,6 @@ async def api_query(request: Request) -> JSONResponse:
     query_text = body.get("query", "").strip()
     if not query_text:
         return JSONResponse({"error": "Query cannot be empty"}, status_code=400)
-
-    total_in_ram = kernel.total_chunks or len(kernel.bm25.chunks)
-    if total_in_ram == 0:
-        return JSONResponse({
-            "error": "No documents ingested in vault. Please ingest a PDF textbook first.",
-            "empty_vault": True
-        }, status_code=400)
 
     deep_thinking = body.get("deep_thinking", True)
     t0 = time.time()
