@@ -2,7 +2,7 @@
 
 import json
 import re
-from typing import Optional
+from typing import Optional, Tuple
 from privearch.schemas import QueryAnalysis, RiskLevel, TaskType
 from privearch.models.client import LocalModelClient
 
@@ -35,12 +35,59 @@ class QueryAnalyzer:
     RLCD Router:
     Intercepts the user query using the 0.5B model and tags it with a Pydantic schema.
     """
-    def __init__(self, client: LocalModelClient, model_name: str = "qwen2.5:0.5b"):
+    # Prompt Injection Delimiters & Chat Tokens
+    PROMPT_INJECTION_TOKENS = (
+        "<|im_start|>", "<|im_end|>", "<|system|>", "<|user|>", "<|assistant|>",
+        "[INST]", "[/INST]", "<<SYS>>", "<</SYS>>",
+        "<start_of_turn>", "<end_of_turn>"
+    )
+
+    # CBRN (Chemical, Biological, Radiological, Nuclear) & Weaponization patterns
+    CBRN_WEAPON_TERMS = {
+        "sarin", "soman", "tabun", "vx nerve", "novichok", "mustard gas",
+        "weaponized ricin", "weaponized anthrax", "dirty bomb", "botulinum toxin weapon",
+        "chlorine gas weapon", "phosgene weapon", "improvised explosive device", "pipe bomb"
+    }
+
+    @classmethod
+    def sanitize_user_input(cls, text: str) -> str:
+        """Neutralize prompt injection delimiters and chat template escape tokens."""
+        clean = text
+        for tok in cls.PROMPT_INJECTION_TOKENS:
+            clean = clean.replace(tok, "")
+        # Neutralize triple quotes to prevent delimiter breakouts
+        clean = clean.replace('"""', '\"\"').replace("'''", "\'\'")
+        return clean.strip()
+
+    @classmethod
+    def detect_cbrn_threat(cls, text: str) -> Tuple[bool, str]:
+        """Detect weaponization or illicit synthesis threats."""
+        lower = text.lower()
+        for term in cls.CBRN_WEAPON_TERMS:
+            if term in lower:
+                return True, f"Hazardous material threat detected: '{term}'"
+        return False, ""
+
+    def __init__(self, client: Optional[LocalModelClient] = None, model_name: str = "qwen2.5:0.5b"):
         self.client = client
         self.model_name = model_name
 
     def analyze(self, query: str) -> QueryAnalysis:
-        prompt = f"Analyze this scientific query:\n\"{query}\"\n\nJSON:"
+        sanitized_query = self.sanitize_user_input(query)
+        is_threat, threat_reason = self.detect_cbrn_threat(sanitized_query)
+        if is_threat:
+            return QueryAnalysis(
+                risk_level=RiskLevel.CRITICAL,
+                task_type=TaskType.SAFETY_AUDIT,
+                scientific_domain="Toxicology / Chemical Safety Guardrail",
+                key_entities=["Restricted Chemical / Biological Agent"],
+                lexical_keywords=["safety", "neutralization", "hazard", "toxicity"],
+                semantic_queries=[sanitized_query],
+                adversarial_audit_required=True,
+                analysis_rationale=f"SAFETY REFUSAL / AUDIT: {threat_reason}"
+            )
+
+        prompt = f"Analyze this scientific query:\n\"{sanitized_query}\"\n\nJSON:"
 
         try:
             raw_output = self.client.generate(

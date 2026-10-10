@@ -138,6 +138,37 @@ public class PrivearchApiService
         return $"{BaseUrl}/api/pdf?path={Uri.EscapeDataString(filePath)}#page={pageNum}";
     }
 
+    public async Task<SolveResultDto?> SolveEquationAsync(string equation, string targetVariable, object variables)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/compute/solve", new
+            {
+                equation,
+                target_variable = targetVariable,
+                variables
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<SolveResultDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new SolveResultDto { Success = false, Error = ex.Message };
+        }
+    }
+
+    public async Task<ArtifactsResultDto?> GetArtifactsAsync()
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<ArtifactsResultDto>("/api/artifacts").ConfigureAwait(false);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task<UpdaterStatusDto?> GetUpdaterStatusAsync()
     {
         try

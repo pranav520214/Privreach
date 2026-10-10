@@ -53,69 +53,57 @@
                         <!-- Top Navigation Icons -->
                         <StackPanel Grid.Row="0" Spacing="6" HorizontalAlignment="Center">
                             <Button Style="{StaticResource NavIconButtonStyle}"
+                                    Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Home'), Mode=OneWay}"
                                     Tag="Home" Click="NavIconButton_Click"
                                     ToolTipService.ToolTip="Home Dashboard">
-                                <FontIcon Glyph="&#xE80F;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <FontIcon Glyph="&#xE80F;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Home'), Mode=OneWay}" />
                             </Button>
                             
-                            <!-- Research (Active Indicator) -->
+                            <!-- Research Workstation -->
                             <Button Style="{StaticResource NavIconButtonStyle}"
-                                    Background="{StaticResource AccentBluePillFillBrush}"
+                                    Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Research'), Mode=OneWay}"
                                     Tag="Research" Click="NavIconButton_Click"
                                     ToolTipService.ToolTip="Scientific Research Workstation">
-                                <FontIcon Glyph="&#xE95A;" FontSize="16" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                <FontIcon Glyph="&#xE95A;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Research'), Mode=OneWay}" />
                             </Button>
 
                             <Button Style="{StaticResource NavIconButtonStyle}"
+                                    Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Projects'), Mode=OneWay}"
                                     Tag="Projects" Click="NavIconButton_Click"
                                     ToolTipService.ToolTip="Projects &amp; Experiments">
-                                <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <FontIcon Glyph="&#xE8F1;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Projects'), Mode=OneWay}" />
                             </Button>
 
                             <Button Style="{StaticResource NavIconButtonStyle}"
+                                    Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Knowledge'), Mode=OneWay}"
                                     Tag="Knowledge" Click="NavIconButton_Click"
                                     ToolTipService.ToolTip="Knowledge Graph &amp; Vault">
-                                <FontIcon Glyph="&#xE81D;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <FontIcon Glyph="&#xE81D;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Knowledge'), Mode=OneWay}" />
                             </Button>
 
                             <Button Style="{StaticResource NavIconButtonStyle}"
+                                    Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Environments'), Mode=OneWay}"
                                     Tag="Environments" Click="NavIconButton_Click"
-                                    ToolTipService.ToolTip="Simulation Environments">
-                                <FontIcon Glyph="&#xE9CA;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                    ToolTipService.ToolTip="Scientific Computing &amp; SymPy Solver">
+                                <FontIcon Glyph="&#xE9CA;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Environments'), Mode=OneWay}" />
                             </Button>
 
                             <Button Style="{StaticResource NavIconButtonStyle}"
-                                    Tag="Media" Click="NavIconButton_Click"
-                                    ToolTipService.ToolTip="Media &amp; Video Datasets">
-                                <FontIcon Glyph="&#xE714;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
-                            </Button>
-
-                            <Button Style="{StaticResource NavIconButtonStyle}"
-                                    Tag="Connections" Click="NavIconButton_Click"
-                                    ToolTipService.ToolTip="Air-Gapped Local Connections">
-                                <FontIcon Glyph="&#xE701;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
-                            </Button>
-
-                            <Button Style="{StaticResource NavIconButtonStyle}"
-                                    Tag="Automations" Click="NavIconButton_Click"
-                                    ToolTipService.ToolTip="Automated SymPy Verification Pipelines">
-                                <FontIcon Glyph="&#xE945;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
-                            </Button>
-
-                            <Button Style="{StaticResource NavIconButtonStyle}"
+                                    Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Artifacts'), Mode=OneWay}"
                                     Tag="Artifacts" Click="NavIconButton_Click"
-                                    ToolTipService.ToolTip="Generated Research Artifacts">
-                                <FontIcon Glyph="&#xE8F4;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                    ToolTipService.ToolTip="Generated Research Artifacts &amp; Provenance">
+                                <FontIcon Glyph="&#xE8F4;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Artifacts'), Mode=OneWay}" />
                             </Button>
                         </StackPanel>
 
                         <!-- Bottom Settings Icon -->
                         <Button Grid.Row="1"
                                 Style="{StaticResource NavIconButtonStyle}"
+                                Background="{x:Bind local:MainPage.NavSectionToActiveBrush(ViewModel.SelectedNavSection, 'Settings'), Mode=OneWay}"
                                 Tag="Settings" Click="NavIconButton_Click"
                                 HorizontalAlignment="Center"
-                                ToolTipService.ToolTip="Workstation Preferences">
-                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                ToolTipService.ToolTip="Workstation Preferences &amp; OTA Updates">
+                            <FontIcon Glyph="&#xE713;" FontSize="16" Foreground="{x:Bind local:MainPage.NavSectionToForegroundBrush(ViewModel.SelectedNavSection, 'Settings'), Mode=OneWay}" />
                         </Button>
                     </Grid>
                 </Border>
@@ -397,7 +385,8 @@
         <!-- ======================================================== -->
         <ScrollViewer Grid.Column="1"
                       VerticalScrollBarVisibility="Auto"
-                      Padding="20,16,20,16">
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Research'), Mode=OneWay}">
             <StackPanel Spacing="16">
 
                 <!-- CARD 1: SCIENTIFIC ANALYSIS & KEY RESULTS -->
@@ -571,12 +560,12 @@
                     </Button>
                 </StackPanel>
 
-                <!-- CARD 2: INTERACTIVE 100x100 COMPUTATIONAL MATRIX -->
+                <!-- CARD 2A: MATRIX VIEW (Interactive 100x100 Computational Matrix) -->
                 <Border Style="{StaticResource SkeuoCardBorderStyle}"
                         Padding="18"
-                        Visibility="{x:Bind local:MainPage.TabToInvertVisibility(ViewModel.ActiveCenterTab, 'Results'), Mode=OneWay}">
+                        Visibility="{x:Bind local:MainPage.TabToVisibility(ViewModel.ActiveCenterTab, 'Matrix View'), Mode=OneWay}">
                     <StackPanel Spacing="16">
-                        <!-- Matrix Header with Resolution & View Controls -->
+                        <!-- Matrix Header with Resolution &amp; View Controls -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -593,7 +582,7 @@
                                            Foreground="{StaticResource TextSlateSecondaryBrush}" />
                             </StackPanel>
 
-                            <!-- Resolution, FPS & View Controls -->
+                            <!-- Resolution, FPS &amp; View Controls -->
                             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                 <!-- Resolution buttons -->
                                 <Border Background="{StaticResource SurfaceSubtleGreyBrush}"
@@ -655,7 +644,7 @@
                             <Grid.ColumnDefinitions>
                                 <!-- Dot Matrix Canvas (420px) -->
                                 <ColumnDefinition Width="Auto" />
-                                <!-- Aerodynamic Metrics & Wireframe (*) -->
+                                <!-- Aerodynamic Metrics &amp; Wireframe (*) -->
                                 <ColumnDefinition Width="*" />
                             </Grid.ColumnDefinitions>
 
@@ -673,7 +662,7 @@
                                        Stretch="Uniform" />
                             </Border>
 
-                            <!-- Right Metrics, 3D Wireframe & Progress Indicator -->
+                            <!-- Right Metrics, 3D Wireframe &amp; Progress Indicator -->
                             <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Center">
                                 <!-- Aerodynamic Metrics Card -->
                                 <Border Background="{StaticResource SurfaceSubtleGreyBrush}"
@@ -775,7 +764,238 @@
                     </StackPanel>
                 </Border>
 
-                <!-- CARD: RESULTS VIEW (Academic Synthesis & Claim Verification Matrix) -->
+                <!-- CARD 2B: 3D MODEL VIEW -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}"
+                        Padding="18"
+                        Visibility="{x:Bind local:MainPage.TabToVisibility(ViewModel.ActiveCenterTab, '3D Model'), Mode=OneWay}">
+                    <StackPanel Spacing="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="3D Aerodynamic Model &amp; Surface Mesh"
+                                           FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                <TextBlock Text="Parametric geometry, camber line, and chord discretization"
+                                           FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="{StaticResource AccentBluePillFillBrush}"
+                                    BorderBrush="{StaticResource AccentBluePillStrokeBrush}"
+                                    BorderThickness="1" CornerRadius="6" Padding="8,4">
+                                <TextBlock Text="Mesh: 14,280 Elements" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                            </Border>
+                        </Grid>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- 3D Airfoil Profile Visualizer -->
+                            <Border Grid.Column="0" Height="280" Background="#FFFFFF"
+                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="16">
+                                <Grid>
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+                                        <TextBlock Text="✈️" FontSize="48" HorizontalAlignment="Center" />
+                                        <TextBlock Text="{x:Bind ViewModel.ActiveProjectTitle, Mode=OneWay}"
+                                                   FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="Supercritical Wing Design • Sweep 18° • Aspect Ratio 8.5 • Dihedral 2.5°"
+                                                   FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" HorizontalAlignment="Center" />
+                                        <Border Background="{StaticResource SurfaceSubtleGreyBrush}" CornerRadius="6" Padding="10,6">
+                                            <TextBlock Text="{x:Bind ViewModel.GoverningEquation, Mode=OneWay}"
+                                                       FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                        </Border>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- Geometry Specifications Table -->
+                            <Border Grid.Column="1" Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="10" Padding="14">
+                                <StackPanel Spacing="10">
+                                    <TextBlock Text="GEOMETRIC PARAMETERS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                    <Grid RowSpacing="6">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Wingspan (b):" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                        <TextBlock Grid.Row="0" Grid.Column="1" Text="12.4 m" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Root Chord (c_r):" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                        <TextBlock Grid.Row="1" Grid.Column="1" Text="2.10 m" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Tip Chord (c_t):" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                        <TextBlock Grid.Row="2" Grid.Column="1" Text="0.85 m" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+
+                                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Planform Area (S):" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                        <TextBlock Grid.Row="3" Grid.Column="1" Text="18.29 m²" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+
+                                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Taper Ratio (λ):" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                        <TextBlock Grid.Row="4" Grid.Column="1" Text="0.405" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- CARD 2C: SIMULATION & DETERMINISTIC SYMPY SOLVER -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}"
+                        Padding="18"
+                        Visibility="{x:Bind local:MainPage.TabToVisibility(ViewModel.ActiveCenterTab, 'Simulation'), Mode=OneWay}">
+                    <StackPanel Spacing="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="Interactive SymPy Equation Solver &amp; Simulation"
+                                           FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                <TextBlock Text="Deterministic symbolic AST algebra without LLM calculation error"
+                                           FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="{StaticResource StatusGreenFillBrush}"
+                                    BorderBrush="{StaticResource StatusGreenStrokeBrush}"
+                                    BorderThickness="1" CornerRadius="6" Padding="8,4">
+                                <TextBlock Text="Zero-Hallucination Active" FontSize="11" FontWeight="Bold" Foreground="{StaticResource StatusGreenBrush}" />
+                            </Border>
+                        </Grid>
+
+                        <!-- Solver Controls -->
+                        <Grid ColumnSpacing="12" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Governing Equation:" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <TextBox Text="{x:Bind ViewModel.SolveEquationText, Mode=TwoWay}"
+                                         PlaceholderText="e.g. P * V = n * R * T"
+                                         FontSize="12" FontFamily="Consolas, Cascadia Code" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBlock Text="Solve For:" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <TextBox Text="{x:Bind ViewModel.SolveTargetVariable, Mode=TwoWay}"
+                                         PlaceholderText="e.g. P"
+                                         FontSize="12" FontFamily="Consolas, Cascadia Code" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="Known Variables:" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <TextBox Text="{x:Bind ViewModel.SolveVariablesText, Mode=TwoWay}"
+                                         PlaceholderText="V=0.05, n=2.0, T=350.0"
+                                         FontSize="12" FontFamily="Consolas, Cascadia Code" />
+                            </StackPanel>
+
+                            <Button Grid.Column="3"
+                                    VerticalAlignment="Bottom"
+                                    Height="32" Padding="14,0"
+                                    Background="{StaticResource AccentBluePrimaryBrush}"
+                                    Foreground="#FFFFFF" CornerRadius="6"
+                                    Command="{x:Bind ViewModel.SolveInteractiveEquationCommand}"
+                                    IsEnabled="{x:Bind local:MainPage.Not(ViewModel.IsSolving), Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE946;" FontSize="12" />
+                                    <TextBlock Text="Solve" FontSize="12" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Solver Result Panel -->
+                        <Border Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="14">
+                            <StackPanel Spacing="8">
+                                <Grid>
+                                    <TextBlock Text="COMPUTED SOLUTION" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedTertiaryBrush}" />
+                                    <ProgressRing Width="14" Height="14" HorizontalAlignment="Right" IsActive="{x:Bind ViewModel.IsSolving, Mode=OneWay}" />
+                                </Grid>
+                                <TextBlock Text="{x:Bind ViewModel.SolveResultText, Mode=OneWay}"
+                                           FontSize="14" FontWeight="Bold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.SolveFormulaLatex, Mode=OneWay}"
+                                           FontSize="12" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextNavyPrimaryBrush}"
+                                           Visibility="{x:Bind local:MainPage.StringNotEmptyToVisibility(ViewModel.SolveFormulaLatex), Mode=OneWay}" />
+                                <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="10"
+                                        Visibility="{x:Bind local:MainPage.StringNotEmptyToVisibility(ViewModel.SolveCodeExecuted), Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind ViewModel.SolveCodeExecuted, Mode=OneWay}"
+                                               FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- CARD 2D: GRAPHS & KNOWLEDGE GRAPH VIEW -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}"
+                        Padding="18"
+                        Visibility="{x:Bind local:MainPage.TabToVisibility(ViewModel.ActiveCenterTab, 'Graphs'), Mode=OneWay}">
+                    <StackPanel Spacing="16">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="GraphRAG Cross-Document Citation Topology"
+                                           FontSize="15" FontWeight="Bold"
+                                           Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                <TextBlock Text="Discovered cross-document bridges, shared entities, and citation paths"
+                                           FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                            </StackPanel>
+                            <Border Grid.Column="1" Background="{StaticResource AccentBluePillFillBrush}"
+                                    BorderBrush="{StaticResource AccentBluePillStrokeBrush}"
+                                    BorderThickness="1" CornerRadius="6" Padding="8,4">
+                                <TextBlock Text="Deterministic Bridges" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                            </Border>
+                        </Grid>
+
+                        <!-- Retrieved Passages & Bridges List -->
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.RetrievedChunks, Mode=OneWay}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="models:RetrievedChunkDto">
+                                    <Border Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                            BorderBrush="{StaticResource BorderSubtleBrush}"
+                                            BorderThickness="1" CornerRadius="8" Padding="12" Margin="0,0,0,8"
+                                            Tapped="ChunkItem_Tapped">
+                                        <StackPanel Spacing="4">
+                                            <Grid>
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <TextBlock Text="📄" FontSize="11" />
+                                                    <TextBlock Text="{x:Bind DocName}" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                                    <TextBlock Text="• Page" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                                    <TextBlock Text="{x:Bind PageNum}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                                </StackPanel>
+                                                <Border HorizontalAlignment="Right" Background="{StaticResource AccentBluePillFillBrush}" CornerRadius="4" Padding="6,2">
+                                                    <TextBlock Text="{x:Bind SectionHeader}" FontSize="10" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                                </Border>
+                                            </Grid>
+                                            <TextBlock Text="{x:Bind Text}" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" MaxLines="2" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+                <!-- CARD 2E: RESULTS VIEW (Academic Synthesis, Claims Verification & Synchronized PDF) -->
                 <Border Style="{StaticResource SkeuoCardBorderStyle}"
                         Padding="18"
                         Visibility="{x:Bind local:MainPage.TabToVisibility(ViewModel.ActiveCenterTab, 'Results'), Mode=OneWay}">
@@ -817,6 +1037,35 @@
                                        LineHeight="20"
                                        Foreground="{StaticResource TextNavyPrimaryBrush}" />
                         </Border>
+
+                        <!-- Verification Matrix Claims List -->
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="CLAIM VERIFICATION MATRIX" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Claims, Mode=OneWay}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="models:ClaimDto">
+                                        <Border Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                                BorderThickness="1" CornerRadius="6" Padding="10,8" Margin="0,0,0,6"
+                                                Tapped="ClaimItem_Tapped">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="Auto" />
+                                                </Grid.ColumnDefinitions>
+                                                <StackPanel Grid.Column="0" Spacing="2">
+                                                    <TextBlock Text="{x:Bind Text}" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" TextWrapping="Wrap" />
+                                                    <TextBlock Text="{x:Bind CitationReference}" FontSize="10" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                                </StackPanel>
+                                                <Border Grid.Column="1" VerticalAlignment="Center" Background="{StaticResource StatusGreenFillBrush}" CornerRadius="4" Padding="6,2">
+                                                    <TextBlock Text="{x:Bind StatusBadge}" FontSize="10" FontWeight="Bold" Foreground="{StaticResource StatusGreenBrush}" />
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
 
                         <!-- PDF Viewer Synchronization View -->
                         <Border Background="{StaticResource SurfaceWhiteBrush}"
@@ -936,6 +1185,584 @@
                             </Border>
                         </StackPanel>
                     </Grid>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================================================== -->
+        <!-- VIEW: HOME DASHBOARD (SelectedNavSection == 'Home')     -->
+        <!-- ======================================================== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Home'), Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <!-- Welcome Banner Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="20">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Welcome to Privreach OS" FontSize="20" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Text="Private, Zero-Trust Research Operating Environment • Air-Gapped &amp; Deterministic"
+                                       FontSize="12" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                <Button Padding="12,6" CornerRadius="6" Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                        Tag="Research" Click="NavIconButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE95A;" FontSize="12" />
+                                        <TextBlock Text="Open Workstation" FontSize="12" FontWeight="SemiBold" />
+                                    </StackPanel>
+                                </Button>
+                                <Button Padding="12,6" CornerRadius="6" Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                        BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                        Command="{x:Bind ViewModel.LoadSampleDocumentCommand}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                        <TextBlock Text="Load Sample Textbook" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </StackPanel>
+                        <Border Grid.Column="1" VerticalAlignment="Center" Background="{StaticResource AccentBluePillFillBrush}"
+                                BorderBrush="{StaticResource AccentBluePillStrokeBrush}" BorderThickness="1" CornerRadius="12" Padding="16">
+                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                <TextBlock Text="🔒" FontSize="28" HorizontalAlignment="Center" />
+                                <TextBlock Text="Zero Egress" FontSize="11" FontWeight="Bold" Foreground="{StaticResource AccentBluePrimaryBrush}" HorizontalAlignment="Center" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Live Metrics Summary Grid -->
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Style="{StaticResource SkeuoCardBorderStyle}" Padding="14">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="KNOWLEDGE VAULT" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedTertiaryBrush}" />
+                            <TextBlock Text="{x:Bind ViewModel.Documents.Count, Mode=OneWay}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Text="Indexed Documents" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="1" Style="{StaticResource SkeuoCardBorderStyle}" Padding="14">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="RESEARCH ARTIFACTS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedTertiaryBrush}" />
+                            <TextBlock Text="{x:Bind ViewModel.Artifacts.Count, Mode=OneWay}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                            <TextBlock Text="Equations &amp; Proofs" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="2" Style="{StaticResource SkeuoCardBorderStyle}" Padding="14">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="SYNTHESIS ENGINE" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedTertiaryBrush}" />
+                            <TextBlock Text="{x:Bind ViewModel.ModelDisplayName, Mode=OneWay}" FontSize="15" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind ViewModel.ModelEngineSubtitle, Mode=OneWay}" FontSize="10" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                    </Border>
+
+                    <Border Grid.Column="3" Style="{StaticResource SkeuoCardBorderStyle}" Padding="14">
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="HARDWARE AUDIT" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedTertiaryBrush}" />
+                            <TextBlock Text="{x:Bind ViewModel.RamUsageDisplay, Mode=OneWay}" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Text="Local System RAM" FontSize="10" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Quick Launcher Actions -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="16">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="QUICK ACTIONS &amp; TOOLS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Button Grid.Column="0" HorizontalAlignment="Stretch" Padding="14" CornerRadius="8"
+                                    Background="{StaticResource SurfaceSubtleGreyBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    Click="IngestButton_Click">
+                                <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="📥" FontSize="20" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Ingest Research PDF" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="OCR &amp; Chunk into Vault" FontSize="10" Foreground="{StaticResource TextSlateSecondaryBrush}" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button Grid.Column="1" HorizontalAlignment="Stretch" Padding="14" CornerRadius="8"
+                                    Background="{StaticResource SurfaceSubtleGreyBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    Tag="Environments" Click="NavIconButton_Click">
+                                <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="⚡" FontSize="20" HorizontalAlignment="Center" />
+                                    <TextBlock Text="SymPy Equation Solver" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Exact symbolic math engine" FontSize="10" Foreground="{StaticResource TextSlateSecondaryBrush}" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+
+                            <Button Grid.Column="2" HorizontalAlignment="Stretch" Padding="14" CornerRadius="8"
+                                    Background="{StaticResource SurfaceSubtleGreyBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    Command="{x:Bind ViewModel.CheckForUpdatesCommand}">
+                                <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                    <TextBlock Text="🔄" FontSize="20" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Check OTA Updates" FontSize="12" FontWeight="SemiBold" Foreground="{StaticResource TextNavyPrimaryBrush}" HorizontalAlignment="Center" />
+                                    <TextBlock Text="Zero-trust version control" FontSize="10" Foreground="{StaticResource TextSlateSecondaryBrush}" HorizontalAlignment="Center" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================================================== -->
+        <!-- VIEW: PROJECTS (SelectedNavSection == 'Projects')        -->
+        <!-- ======================================================== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Projects'), Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Active Research Projects &amp; Computational Domains" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <TextBlock Text="Switch active domain parameters and governing equations with one click." FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Project Cards Grid -->
+                <Grid ColumnSpacing="12" RowSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <!-- Card 1: Aerospace -->
+                    <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource SkeuoCardBorderStyle}" Padding="16">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="✈️" FontSize="16" />
+                                    <TextBlock Text="Aerospace &amp; CFD" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                </StackPanel>
+                                <Button HorizontalAlignment="Right" Padding="8,4" FontSize="11" CornerRadius="6"
+                                        Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                        Tag="Aerospace" Click="DomainButton_Click">
+                                    <TextBlock Text="Activate" FontWeight="SemiBold" />
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="Governing: C_L = 2L / (ρ v² S) • C_D = C_{D0} + C_L² / (π e AR)"
+                                       FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource AccentBluePrimaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="Subsonic cruise analysis of NACA 64-416 supercritical airfoil wing section with boundary layer airflow discretization."
+                                       FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Card 2: Physics -->
+                    <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource SkeuoCardBorderStyle}" Padding="16">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="⚛️" FontSize="16" />
+                                    <TextBlock Text="Physics &amp; Thermodynamics" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                </StackPanel>
+                                <Button HorizontalAlignment="Right" Padding="8,4" FontSize="11" CornerRadius="6"
+                                        Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                        Tag="Physics" Click="DomainButton_Click">
+                                    <TextBlock Text="Activate" FontWeight="SemiBold" />
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="Governing: P = n R T / V • ΔU = Q - W • γ = 1.4"
+                                       FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource AccentBluePrimaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="Thermodynamic state equations and ideal gas expansion modeling with deterministic SymPy algebraic solvers."
+                                       FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Card 3: Biology -->
+                    <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource SkeuoCardBorderStyle}" Padding="16">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="🧬" FontSize="16" />
+                                    <TextBlock Text="Biology &amp; Pharmacology" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                </StackPanel>
+                                <Button HorizontalAlignment="Right" Padding="8,4" FontSize="11" CornerRadius="6"
+                                        Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                        Tag="Biology" Click="DomainButton_Click">
+                                    <TextBlock Text="Activate" FontWeight="SemiBold" />
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="Governing: CL = V_d × k_el • AUC = Dose / CL • F = 0.25"
+                                       FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource AccentBluePrimaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="Pharmacokinetics, clearance rate, and receptor binding kinetics of immunosuppressive therapeutic agents."
+                                       FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Card 4: Chemistry -->
+                    <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource SkeuoCardBorderStyle}" Padding="16">
+                        <StackPanel Spacing="10">
+                            <Grid>
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="🧪" FontSize="16" />
+                                    <TextBlock Text="Chemical Equilibrium &amp; Kinetics" FontSize="14" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                </StackPanel>
+                                <Button HorizontalAlignment="Right" Padding="8,4" FontSize="11" CornerRadius="6"
+                                        Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                        Tag="Chemistry" Click="DomainButton_Click">
+                                    <TextBlock Text="Activate" FontWeight="SemiBold" />
+                                </Button>
+                            </Grid>
+                            <TextBlock Text="Governing: ΔG = ΔH - T ΔS • K_eq = exp(-ΔG° / RT)"
+                                       FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource AccentBluePrimaryBrush}" TextWrapping="Wrap" />
+                            <TextBlock Text="Gibbs Free Energy equilibrium derivations, Le Chatelier shifts, and reaction rate temperature dependence."
+                                       FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================================================== -->
+        <!-- VIEW: KNOWLEDGE VAULT (SelectedNavSection == 'Knowledge') -->
+        <!-- ======================================================== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Knowledge'), Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <!-- Vault Header Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Local Knowledge Vault &amp; Vector Index" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Text="All documents are parsed and vectorized locally in RAM. Zero network transmission." FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <Button Padding="10,6" CornerRadius="6" Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                    Click="IngestButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE8A5;" FontSize="12" />
+                                    <TextBlock Text="Ingest File" FontSize="11" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                            <Button Padding="10,6" CornerRadius="6" Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    Command="{x:Bind ViewModel.LoadSampleDocumentCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE896;" FontSize="12" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                    <TextBlock Text="Load Sample" FontSize="11" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                </StackPanel>
+                            </Button>
+                            <Button Padding="10,6" CornerRadius="6" Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                    BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    Command="{x:Bind ViewModel.ClearVaultCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="12" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                    <TextBlock Text="Clear Vault" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Documents List -->
+                <TextBlock Text="INDEXED DOCUMENTS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Documents, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:DocumentDto">
+                            <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="14" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="📄" FontSize="14" />
+                                            <TextBlock Text="{x:Bind DocName}" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                        </StackPanel>
+                                        <TextBlock Text="{x:Bind Path}" FontSize="10" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextSlateSecondaryBrush}" TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+                                    <Border Grid.Column="1" VerticalAlignment="Center" Background="{StaticResource AccentBluePillFillBrush}"
+                                            BorderBrush="{StaticResource AccentBluePillStrokeBrush}" BorderThickness="1" CornerRadius="6" Padding="8,4">
+                                        <TextBlock Text="{x:Bind Chunks}" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================================================== -->
+        <!-- VIEW: ENVIRONMENTS (SelectedNavSection == 'Environments') -->
+        <!-- ======================================================== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Environments'), Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <!-- Environments Header Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Deterministic SymPy Computational Solver" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Text="Execute exact symbolic algebra, numerical substitutions, and mathematical proofs." FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                        <Border Grid.Column="1" Background="{StaticResource StatusGreenFillBrush}"
+                                BorderBrush="{StaticResource StatusGreenStrokeBrush}" BorderThickness="1" CornerRadius="6" Padding="8,4">
+                            <TextBlock Text="✓ SymPy AST Active" FontSize="11" FontWeight="Bold" Foreground="{StaticResource StatusGreenBrush}" />
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- Solver Interactive Form Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <StackPanel Spacing="14">
+                        <TextBlock Text="SOLVE MATHEMATICAL EQUATION" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <Grid ColumnSpacing="12" RowSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Governing Equation:" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <TextBox Text="{x:Bind ViewModel.SolveEquationText, Mode=TwoWay}"
+                                         PlaceholderText="e.g. P * V = n * R * T"
+                                         FontSize="12" FontFamily="Consolas, Cascadia Code" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Spacing="4">
+                                <TextBlock Text="Target Variable:" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <TextBox Text="{x:Bind ViewModel.SolveTargetVariable, Mode=TwoWay}"
+                                         PlaceholderText="e.g. P"
+                                         FontSize="12" FontFamily="Consolas, Cascadia Code" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Spacing="4">
+                                <TextBlock Text="Known Values:" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <TextBox Text="{x:Bind ViewModel.SolveVariablesText, Mode=TwoWay}"
+                                         PlaceholderText="V=0.05, n=2.0, T=350.0"
+                                         FontSize="12" FontFamily="Consolas, Cascadia Code" />
+                            </StackPanel>
+
+                            <Button Grid.Column="3"
+                                    VerticalAlignment="Bottom"
+                                    Height="32" Padding="14,0"
+                                    Background="{StaticResource AccentBluePrimaryBrush}"
+                                    Foreground="#FFFFFF" CornerRadius="6"
+                                    Command="{x:Bind ViewModel.SolveInteractiveEquationCommand}"
+                                    IsEnabled="{x:Bind local:MainPage.Not(ViewModel.IsSolving), Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE946;" FontSize="12" />
+                                    <TextBlock Text="Compute Solution" FontSize="12" FontWeight="SemiBold" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Solution Output Display -->
+                        <Border Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="14">
+                            <StackPanel Spacing="8">
+                                <Grid>
+                                    <TextBlock Text="COMPUTED SOLUTION" FontSize="10" FontWeight="Bold" Foreground="{StaticResource TextMutedTertiaryBrush}" />
+                                    <ProgressRing Width="14" Height="14" HorizontalAlignment="Right" IsActive="{x:Bind ViewModel.IsSolving, Mode=OneWay}" />
+                                </Grid>
+                                <TextBlock Text="{x:Bind ViewModel.SolveResultText, Mode=OneWay}"
+                                           FontSize="15" FontWeight="Bold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                <TextBlock Text="{x:Bind ViewModel.SolveFormulaLatex, Mode=OneWay}"
+                                           FontSize="12" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextNavyPrimaryBrush}"
+                                           Visibility="{x:Bind local:MainPage.StringNotEmptyToVisibility(ViewModel.SolveFormulaLatex), Mode=OneWay}" />
+                                <Border Background="#FFFFFF" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1" CornerRadius="6" Padding="10"
+                                        Visibility="{x:Bind local:MainPage.StringNotEmptyToVisibility(ViewModel.SolveCodeExecuted), Mode=OneWay}">
+                                    <TextBlock Text="{x:Bind ViewModel.SolveCodeExecuted, Mode=OneWay}"
+                                               FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================================================== -->
+        <!-- VIEW: ARTIFACTS (SelectedNavSection == 'Artifacts')      -->
+        <!-- ======================================================== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Artifacts'), Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <!-- Artifacts Header Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="4">
+                            <TextBlock Text="Scientific Provenance &amp; Artifact Ledger" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Text="Immutable audit trail of calculated formulas, execution traces, and verified proofs." FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                        </StackPanel>
+                        <Button Grid.Column="1" Padding="10,6" CornerRadius="6" Background="{StaticResource SurfaceSubtleGreyBrush}"
+                                BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                Command="{x:Bind ViewModel.RefreshArtifactsCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE72C;" FontSize="12" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                <TextBlock Text="Refresh Ledger" FontSize="11" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- Artifacts List -->
+                <TextBlock Text="VERIFIED ARTIFACTS" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Artifacts, Mode=OneWay}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:ArtifactDto">
+                            <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="14" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Spacing="4">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock Text="📜" FontSize="14" />
+                                            <TextBlock Text="{x:Bind Name}" FontSize="13" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                            <Border Background="{StaticResource AccentBluePillFillBrush}" CornerRadius="4" Padding="6,1">
+                                                <TextBlock Text="{x:Bind ArtifactType}" FontSize="10" FontWeight="SemiBold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Text="{x:Bind Description}" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" Text="{x:Bind ArtifactId}" FontSize="10" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextMutedTertiaryBrush}" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ======================================================== -->
+        <!-- VIEW: SETTINGS (SelectedNavSection == 'Settings')        -->
+        <!-- ======================================================== -->
+        <ScrollViewer Grid.Column="1"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="20,16,20,16"
+                      Visibility="{x:Bind local:MainPage.NavSectionToVisibility(ViewModel.SelectedNavSection, 'Settings'), Mode=OneWay}">
+            <StackPanel Spacing="16">
+                <!-- Settings Header Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="Workstation Preferences &amp; Air-Gap Configuration" FontSize="16" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <TextBlock Text="Inspect local privacy boundaries, model engines, and zero-trust OTA updater." FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Model Engine Selection Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="LOCAL INFERENCE ENGINE" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="2*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="4">
+                                <TextBlock Text="Active Synthesis Model:" FontSize="11" Foreground="{StaticResource TextSlateSecondaryBrush}" />
+                                <ComboBox ItemsSource="{x:Bind ViewModel.AvailableModels, Mode=OneWay}"
+                                          SelectedItem="{x:Bind ViewModel.SelectedSynthesisModel, Mode=OneWay}"
+                                          SelectionChanged="ModelComboBox_SelectionChanged"
+                                          HorizontalAlignment="Stretch" />
+                            </StackPanel>
+                            <Button Grid.Column="1" VerticalAlignment="Bottom" Height="32" CornerRadius="6"
+                                    Background="{StaticResource SurfaceSubtleGreyBrush}" BorderBrush="{StaticResource BorderSubtleBrush}" BorderThickness="1"
+                                    Command="{x:Bind ViewModel.StartOllamaCommand}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE768;" FontSize="12" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                                    <TextBlock Text="Trigger Ollama" FontSize="11" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Air-Gap Zero Trust Audit Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="AIR-GAP ZERO-TRUST SECURITY AUDIT" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <Grid RowSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="External Network Egress Block:" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <Border Grid.Row="0" Grid.Column="1" Background="{StaticResource StatusGreenFillBrush}" CornerRadius="4" Padding="8,2">
+                                <TextBlock Text="ENFORCED (0 B/s)" FontSize="10" FontWeight="Bold" Foreground="{StaticResource StatusGreenBrush}" />
+                            </Border>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Localhost Bind Security (127.0.0.1):" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <Border Grid.Row="1" Grid.Column="1" Background="{StaticResource StatusGreenFillBrush}" CornerRadius="4" Padding="8,2">
+                                <TextBlock Text="VERIFIED LOCAL ONLY" FontSize="10" FontWeight="Bold" Foreground="{StaticResource StatusGreenBrush}" />
+                            </Border>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Text="Model Execution Layer:" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <Border Grid.Row="2" Grid.Column="1" Background="{StaticResource AccentBluePillFillBrush}" CornerRadius="4" Padding="8,2">
+                                <TextBlock Text="GGUF / Ollama CPU+GPU" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
+                            </Border>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- OTA Update Manager Card -->
+                <Border Style="{StaticResource SkeuoCardBorderStyle}" Padding="18">
+                    <StackPanel Spacing="12">
+                        <TextBlock Text="OTA SYSTEM UPDATES" FontSize="11" FontWeight="Bold" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                        <TextBlock Text="{x:Bind ViewModel.UpdaterNotificationText, Mode=OneWay}" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}"
+                                   Visibility="{x:Bind local:MainPage.StringNotEmptyToVisibility(ViewModel.UpdaterNotificationText), Mode=OneWay}" />
+                        <Button Padding="14,8" CornerRadius="6" Background="{StaticResource AccentBluePrimaryBrush}" Foreground="#FFFFFF"
+                                Command="{x:Bind ViewModel.CheckForUpdatesCommand}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon Glyph="&#xE72C;" FontSize="12" />
+                                <TextBlock Text="Check for System Updates" FontSize="12" FontWeight="SemiBold" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </Border>
             </StackPanel>
         </ScrollViewer>

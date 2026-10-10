@@ -551,3 +551,61 @@ public class RollbackResultDto
     [JsonPropertyName("error")]
     public string? Error { get; set; }
 }
+
+public class SolveResultDto
+{
+    [JsonPropertyName("success")]
+    public bool Success { get; set; }
+
+    [JsonPropertyName("result")]
+    public double? Result { get; set; }
+
+    [JsonPropertyName("formula_str")]
+    public string FormulaStr { get; set; } = "";
+
+    [JsonPropertyName("code_executed")]
+    public string CodeExecuted { get; set; } = "";
+
+    [JsonPropertyName("equation")]
+    public string Equation { get; set; } = "";
+
+    [JsonPropertyName("target_variable")]
+    public string TargetVariable { get; set; } = "";
+
+    [JsonPropertyName("error")]
+    public string? Error { get; set; }
+}
+
+public class ArtifactDto
+{
+    [JsonPropertyName("artifact_id")]
+    public string ArtifactId { get; set; } = "";
+
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("artifact_type")]
+    public string ArtifactType { get; set; } = "";
+
+    [JsonPropertyName("created_at")]
+    public double CreatedAt { get; set; }
+
+    [JsonPropertyName("description")]
+    public string Description { get; set; } = "";
+
+    [JsonPropertyName("source_doc")]
+    public string? SourceDoc { get; set; }
+
+    [JsonPropertyName("file_path")]
+    public string? FilePath { get; set; }
+}
+
+public class ArtifactsResultDto
+{
+    [JsonPropertyName("artifacts")]
+    public List<ArtifactDto> Artifacts { get; set; } = new();
+
+    [JsonPropertyName("total_count")]
+    public int TotalCount { get; set; }
+}
+

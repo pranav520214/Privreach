@@ -17,12 +17,21 @@ from privearch.tools.base import BaseToolAdapter
 DISALLOWED_MODULES: Set[str] = {
     "socket", "http", "urllib", "requests", "paramiko", "telnetlib",
     "ftplib", "subprocess", "ctypes", "multiprocessing", "threading",
-    "pty", "winreg"
+    "pty", "winreg", "os", "sys", "shutil", "pathlib", "io", "tempfile",
+    "pickle", "marshal", "shelve", "dbm", "sqlite3", "importlib",
+    "inspect", "posix", "nt", "builtins", "signal", "asyncio"
+}
+
+DISALLOWED_BUILTINS: Set[str] = {
+    "open", "eval", "exec", "compile", "__import__", "input", "help",
+    "breakpoint", "globals", "locals", "vars", "dir", "getattr",
+    "setattr", "delattr", "exit", "quit"
 }
 
 DISALLOWED_CALLS: Set[str] = {
     "os.system", "os.popen", "os.remove", "os.unlink", "os.rmdir",
-    "shutil.rmtree", "eval", "exec", "__import__", "compile"
+    "shutil.rmtree", "shutil.copy", "eval", "exec", "__import__", "compile",
+    "open"
 }
 
 
@@ -46,15 +55,29 @@ class ASTSecurityAuditor(ast.NodeVisitor):
                 self.violations.append(f"Import from disallowed module: '{node.module}'")
         self.generic_visit(node)
 
+    def visit_Attribute(self, node: ast.Attribute):
+        # Prevent access to dunder attributes (e.g. __class__, __subclasses__, __globals__)
+        if node.attr.startswith("__"):
+            self.violations.append(f"Disallowed dunder attribute access: '{node.attr}'")
+        self.generic_visit(node)
+
+    def visit_Name(self, node: ast.Name):
+        # Prevent access to dunder variables and restricted builtins
+        if node.id.startswith("__") and node.id not in {"__name__", "__doc__"}:
+            self.violations.append(f"Disallowed dunder variable access: '{node.id}'")
+        if node.id in DISALLOWED_BUILTINS:
+            self.violations.append(f"Disallowed builtin access: '{node.id}'")
+        self.generic_visit(node)
+
     def visit_Call(self, node: ast.Call):
-        # Detect calls like os.system()
+        # Detect calls like os.system() or open()
         if isinstance(node.func, ast.Attribute):
             if isinstance(node.func.value, ast.Name):
                 full_name = f"{node.func.value.id}.{node.func.attr}"
                 if full_name in DISALLOWED_CALLS:
                     self.violations.append(f"Disallowed function call: '{full_name}'")
         elif isinstance(node.func, ast.Name):
-            if node.func.id in {"eval", "exec", "compile", "__import__"}:
+            if node.func.id in DISALLOWED_BUILTINS:
                 self.violations.append(f"Disallowed builtin call: '{node.func.id}'")
         self.generic_visit(node)
 
@@ -238,9 +261,14 @@ globals().update({{"np": np, "sp": sp, "math": math}})
 
 __captured_vars = {{}}
 __last_result = None
-
 try:
-    _scope = globals()
+    # Strip dangerous builtins and isolate scope
+    import builtins as _b
+    _safe_builtins = dict([
+        (k, v) for k, v in _b.__dict__.items()
+        if k not in ("open", "eval", "exec", "compile", "input", "breakpoint", "help", "exit", "quit")
+    ])
+    _scope = {{"__builtins__": _safe_builtins, "np": np, "sp": sp, "math": math, "scipy": scipy}}
     _raw_code = base64.b64decode("{encoded_user_code}").decode("utf-8")
     exec(_raw_code, _scope)
 

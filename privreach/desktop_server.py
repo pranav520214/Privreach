@@ -119,6 +119,14 @@ async def api_status(request: Request) -> JSONResponse:
 async def api_documents(request: Request) -> JSONResponse:
     """Return all currently ingested documents in the Vault."""
     kernel = get_kernel()
+    if not kernel.ingested_files:
+        sample_pdf = os.path.join(repo_root, "tests", "data", "sample_wing_aerodynamics.pdf")
+        if os.path.exists(sample_pdf):
+            try:
+                kernel.ingest_media(sample_pdf, auto_save=True)
+            except Exception:
+                pass
+
     return JSONResponse({
         "documents": kernel.ingested_files,
         "total_count": len(kernel.ingested_files),
@@ -352,8 +360,35 @@ async def api_ingest(request: Request) -> JSONResponse:
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
+def _is_safe_path(target_path: str, kernel: PrivearchKernel) -> bool:
+    """Validate that target_path belongs to ingested files, cache, or workspace."""
+    if not target_path or not os.path.exists(target_path):
+        return False
+    try:
+        real_target = os.path.realpath(target_path).lower()
+        # 1. Ingested files
+        for f in kernel.ingested_files:
+            ingested_p = f.get("path")
+            if ingested_p and os.path.realpath(ingested_p).lower() == real_target:
+                return True
+        # 2. Inside allowed directories
+        allowed_dirs = [
+            os.path.realpath(repo_root).lower(),
+            os.path.realpath(os.path.abspath(".privearch_cache")).lower(),
+            os.path.realpath(os.path.abspath(".privreach_cache")).lower(),
+            os.path.realpath(os.path.abspath(".privreach_media_cache")).lower(),
+            os.path.realpath(os.path.abspath(".privearch_media_cache")).lower(),
+        ]
+        for adir in allowed_dirs:
+            if real_target == adir or real_target.startswith(adir + os.sep):
+                return True
+        return False
+    except Exception:
+        return False
+
+
 async def api_serve_pdf(request: Request) -> Response:
-    """Serve a local PDF file for native rendering in WebView2."""
+    """Serve a local PDF file for native rendering in WebView2 with path traversal protection."""
     doc_path = request.query_params.get("path", "")
     doc_name = request.query_params.get("name", "")
 
@@ -370,6 +405,9 @@ async def api_serve_pdf(request: Request) -> Response:
 
     if not target_path or not os.path.exists(target_path):
         return JSONResponse({"error": "PDF not found"}, status_code=404)
+
+    if not _is_safe_path(target_path, kernel):
+        return JSONResponse({"error": "Access Denied: Path is outside permitted vault boundaries."}, status_code=403)
 
     return FileResponse(
         target_path,
@@ -425,10 +463,14 @@ async def api_switch_model(request: Request) -> JSONResponse:
 
 
 async def api_serve_media(request: Request) -> Response:
-    """Serve local extracted figure images or media files."""
+    """Serve local extracted figure images or media files with path boundary checks."""
     media_path = request.query_params.get("path", "")
     if not media_path or not os.path.exists(media_path):
         return JSONResponse({"error": "Media file not found"}, status_code=404)
+
+    kernel = get_kernel()
+    if not _is_safe_path(media_path, kernel):
+        return JSONResponse({"error": "Access Denied: Media path is outside permitted boundaries."}, status_code=403)
 
     ext = os.path.splitext(media_path)[1].lower()
     mime = "image/png"
@@ -532,6 +574,62 @@ async def api_vault_clear(request: Request) -> JSONResponse:
     })
 
 
+async def api_compute_solve(request: Request) -> JSONResponse:
+    """Deterministically solve a scientific equation with exact SymPy AST and LaTeX."""
+    kernel = get_kernel()
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
+
+    equation = body.get("equation", "").strip()
+    target_var = body.get("target_variable", "ans").strip()
+    known_vars = body.get("variables", {})
+
+    if not equation:
+        return JSONResponse({"error": "Equation is required"}, status_code=400)
+
+    try:
+        calc_val, formula_str, derivation_code = kernel.solver.solve_equation(
+            equation_str=equation,
+            target_variable=target_var,
+            known_values=known_vars
+        )
+
+        if calc_val is not None:
+            kernel.artifact_registry.save_calculation(
+                name=f"Direct Solve: {target_var}",
+                equation=equation,
+                variables=known_vars,
+                computed_value=calc_val,
+                code_executed=derivation_code,
+                source_doc="Scientific Computing Workstation",
+                description=f"Interactive SymPy deterministic derivation for {target_var} in '{equation}'"
+            )
+
+        return JSONResponse({
+            "success": calc_val is not None,
+            "result": calc_val,
+            "formula_str": formula_str,
+            "code_executed": derivation_code,
+            "equation": equation,
+            "target_variable": target_var,
+            "variables": known_vars
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+async def api_artifacts(request: Request) -> JSONResponse:
+    """Return all scientific artifacts and computational derivations in the ledger."""
+    kernel = get_kernel()
+    artifacts = kernel.artifact_registry.list_all()
+    return JSONResponse({
+        "artifacts": [a.model_dump() for a in artifacts],
+        "total_count": len(artifacts)
+    })
+
+
 routes = [
     Route("/api/status", api_status, methods=["GET"]),
     Route("/api/documents", api_documents, methods=["GET"]),
@@ -544,6 +642,8 @@ routes = [
     Route("/api/engine/start", api_start_engine, methods=["POST"]),
     Route("/api/graph", api_graph, methods=["GET"]),
     Route("/api/vault/clear", api_vault_clear, methods=["POST"]),
+    Route("/api/compute/solve", api_compute_solve, methods=["POST"]),
+    Route("/api/artifacts", api_artifacts, methods=["GET"]),
     # Modern Updater Endpoints
     Route("/api/updater/status", api_updater_status, methods=["GET"]),
     Route("/api/updater/check", api_updater_check, methods=["POST"]),
@@ -555,8 +655,17 @@ routes = [
 middleware = [
     Middleware(
         CORSMiddleware,
-        allow_origins=["*"],
-        allow_methods=["*"],
+        allow_origins=[
+            "http://127.0.0.1",
+            "http://localhost",
+            "http://127.0.0.1:8765",
+            "http://localhost:8765",
+            "app://privreach",
+            "http://privreach.desktop",
+            "ms-appx-web://"
+        ],
+        allow_origin_regex=r"^https?://(127\.0\.0\.1|localhost)(:\d+)?$",
+        allow_methods=["GET", "POST", "OPTIONS"],
         allow_headers=["*"]
     )
 ]

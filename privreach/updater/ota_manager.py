@@ -113,13 +113,18 @@ class OTAManager:
                         if progress_cb and total_length:
                             progress_cb(bytes_downloaded / total_length)
 
-            # Check SHA256 if present
+            # Mandatory Cryptographic Verification: Zero-Trust SHA256 Checksum
             expected_sha = update_info.get("sha256")
-            if expected_sha:
-                actual_sha = calculate_sha256(zip_path)
-                if actual_sha.lower() != expected_sha.lower():
+            if not expected_sha:
+                if os.path.exists(zip_path):
                     os.remove(zip_path)
-                    return False, f"Cryptographic integrity mismatch! Expected {expected_sha}, got {actual_sha}"
+                return False, "Security Error: Missing mandatory sha256 checksum in update manifest."
+
+            actual_sha = calculate_sha256(zip_path)
+            if actual_sha.lower() != expected_sha.lower():
+                if os.path.exists(zip_path):
+                    os.remove(zip_path)
+                return False, f"Cryptographic integrity mismatch! Expected {expected_sha}, got {actual_sha}"
 
             return True, zip_path
 

@@ -28,6 +28,49 @@ class DeterministicSolver:
             (implicit_multiplication_application, convert_xor)
         )
 
+    SAFE_MATH_GLOBALS = {
+        "__builtins__": None,
+        "Integer": sp.Integer,
+        "Float": sp.Float,
+        "Rational": sp.Rational,
+        "Symbol": sp.Symbol,
+        "sin": sp.sin,
+        "cos": sp.cos,
+        "tan": sp.tan,
+        "asin": sp.asin,
+        "acos": sp.acos,
+        "atan": sp.atan,
+        "sinh": sp.sinh,
+        "cosh": sp.cosh,
+        "tanh": sp.tanh,
+        "exp": sp.exp,
+        "log": sp.log,
+        "ln": sp.ln,
+        "sqrt": sp.sqrt,
+        "pi": sp.pi,
+        "E": sp.E,
+        "Abs": sp.Abs,
+    }
+
+    DANGEROUS_TOKENS = (
+        "__", "import", "exec", "eval", "compile", "open", "globals",
+        "locals", "builtins", "system", "popen", "lambda", "class", "def",
+        "getattr", "setattr", "delattr", "subprocess", "os.", "sys.",
+        "[", "]", ";", "\\x", "\\u"
+    )
+
+    @classmethod
+    def is_safe_math_expression(cls, expr: str) -> bool:
+        """Verify that an expression contains only harmless mathematical tokens."""
+        lower = expr.lower()
+        for tok in cls.DANGEROUS_TOKENS:
+            if tok in lower:
+                return False
+        # Must not contain string literals or brackets
+        if '"' in expr or "'" in expr:
+            return False
+        return True
+
     def solve_equation(
         self,
         equation_str: str,
@@ -48,9 +91,13 @@ class DeterministicSolver:
         else:
             lhs_str, rhs_str = target_variable, clean_eq
 
+        # Security Guardrail: validate both sides of the equation
+        if not self.is_safe_math_expression(lhs_str) or not self.is_safe_math_expression(rhs_str):
+            return None, "Error: Mathematical expression contained disallowed or non-mathematical tokens.", ""
+
         try:
-            lhs = parse_expr(lhs_str, transformations=self.transformations)
-            rhs = parse_expr(rhs_str, transformations=self.transformations)
+            lhs = parse_expr(lhs_str, global_dict=self.SAFE_MATH_GLOBALS, transformations=self.transformations)
+            rhs = parse_expr(rhs_str, global_dict=self.SAFE_MATH_GLOBALS, transformations=self.transformations)
 
             # Expression = LHS - RHS = 0
             rel_expr = lhs - rhs

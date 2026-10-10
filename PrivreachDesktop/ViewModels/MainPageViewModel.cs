@@ -230,6 +230,29 @@ public partial class MainPageViewModel : ObservableObject
     public ObservableCollection<CrossDocBridgeDto> CrossDocBridges { get; } = new();
     public ObservableCollection<DocumentDto> Documents { get; } = new();
     public ObservableCollection<string> AvailableModels { get; } = new();
+    public ObservableCollection<ArtifactDto> Artifacts { get; } = new();
+
+    // Interactive SymPy Equation Solver properties
+    [ObservableProperty]
+    private string _solveEquationText = "P * V = n * R * T";
+
+    [ObservableProperty]
+    private string _solveTargetVariable = "P";
+
+    [ObservableProperty]
+    private string _solveVariablesText = "V=0.05, n=2.0, T=350.0";
+
+    [ObservableProperty]
+    private string _solveResultText = "";
+
+    [ObservableProperty]
+    private string _solveFormulaLatex = "";
+
+    [ObservableProperty]
+    private string _solveCodeExecuted = "";
+
+    [ObservableProperty]
+    private bool _isSolving = false;
 
     public MainPageViewModel()
     {
@@ -250,6 +273,7 @@ public partial class MainPageViewModel : ObservableObject
         await RefreshStatusAsync();
         await RefreshDocumentsAsync();
         await RefreshModelsAsync();
+        await RefreshArtifactsAsync();
     }
 
     [RelayCommand]
@@ -726,6 +750,108 @@ public partial class MainPageViewModel : ObservableObject
                 HasUpdaterNotification = true;
                 StatusMessage = $"System is up to date (v{res.CurrentVersion}).";
             }
+        }
+    }
+
+    [RelayCommand]
+    public async Task SolveInteractiveEquationAsync()
+    {
+        if (string.IsNullOrWhiteSpace(SolveEquationText))
+            return;
+
+        IsSolving = true;
+        SolveResultText = "Computing exact SymPy AST solution...";
+
+        try
+        {
+            var varsDict = new Dictionary<string, double>();
+            if (!string.IsNullOrWhiteSpace(SolveVariablesText))
+            {
+                var parts = SolveVariablesText.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var part in parts)
+                {
+                    var kv = part.Split('=');
+                    if (kv.Length == 2 && double.TryParse(kv[1].Trim(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var val))
+                    {
+                        varsDict[kv[0].Trim()] = val;
+                    }
+                }
+            }
+
+            var target = string.IsNullOrWhiteSpace(SolveTargetVariable) ? "ans" : SolveTargetVariable.Trim();
+            var res = await _api.SolveEquationAsync(SolveEquationText.Trim(), target, varsDict);
+
+            if (res != null && res.Success && res.Result.HasValue)
+            {
+                SolveResultText = $"Exact Numerical Result: {res.Result.Value:G6}";
+                SolveFormulaLatex = res.FormulaStr;
+                SolveCodeExecuted = res.CodeExecuted;
+                await RefreshArtifactsAsync();
+            }
+            else
+            {
+                SolveResultText = $"Error: {res?.Error ?? "Unable to solve equation"}";
+            }
+        }
+        catch (Exception ex)
+        {
+            SolveResultText = $"Solve Error: {ex.Message}";
+        }
+        finally
+        {
+            IsSolving = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task RefreshArtifactsAsync()
+    {
+        var res = await _api.GetArtifactsAsync();
+        if (res != null)
+        {
+            Artifacts.Clear();
+            foreach (var a in res.Artifacts)
+            {
+                Artifacts.Add(a);
+            }
+        }
+    }
+
+    [RelayCommand]
+    public async Task LoadSampleDocumentAsync()
+    {
+        StatusMessage = "Loading Sample Aerodynamic Wing Textbook into Knowledge Vault...";
+        try
+        {
+            var appDir = AppDomain.CurrentDomain.BaseDirectory;
+            var dir = new DirectoryInfo(appDir);
+            string? repoRoot = null;
+            while (dir != null)
+            {
+                if (Directory.Exists(Path.Combine(dir.FullName, "tests", "data")))
+                {
+                    repoRoot = dir.FullName;
+                    break;
+                }
+                dir = dir.Parent;
+            }
+
+            string? samplePath = repoRoot != null 
+                ? Path.Combine(repoRoot, "tests", "data", "sample_wing_aerodynamics.pdf") 
+                : null;
+
+            if (samplePath != null && File.Exists(samplePath))
+            {
+                await IngestFileAsync(samplePath);
+            }
+            else
+            {
+                await RefreshDocumentsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Sample loading error: {ex.Message}";
         }
     }
 }

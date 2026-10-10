@@ -3,7 +3,7 @@
 import re
 import time
 from typing import List, Optional, Tuple, Iterator, Any
-from privearch.schemas import ScoredChunk, QueryAnalysis, ReasoningStep
+from privearch.schemas import ScoredChunk, QueryAnalysis, ReasoningStep, TaskType, RiskLevel
 from privearch.models.client import LocalModelClient
 from privearch.models.reasoning_engine import (
     ReasoningEngine,
@@ -70,9 +70,18 @@ class SynthesisEngine:
         injected_calc_context: str = "",
         deep_thinking: bool = True
     ) -> SynthesisOutput:
-        """
-        Synthesize answer with bracketed citations and optional R1 / CoT thought stream.
-        """
+        """Synthesize answer with bracketed citations and optional R1 / CoT thought stream."""
+        # Guardrail Interceptor: Refuse dangerous CBRN / chemical weapon synthesis requests
+        if query_analysis.task_type == TaskType.SAFETY_AUDIT and "SAFETY REFUSAL" in getattr(query_analysis, "analysis_rationale", ""):
+            refusal_text = (
+                "### 🛡️ Privreach OS Safety & Biosecurity Guardrail Policy\n\n"
+                f"> **Security Notice:** {query_analysis.analysis_rationale}\n\n"
+                "Privreach OS operates under strict defensive biosecurity and chemical weapon non-proliferation guardrails. "
+                "The requested procedure involves hazardous or restricted toxic/weaponized agents and cannot be synthesized. "
+                "For legitimate toxicology research, please consult official safety data sheets (MSDS/OSHA) or designated institutional biosafety officers."
+            )
+            return SynthesisOutput(text=refusal_text, duration_s=0.01)
+
         if not retrieved_chunks:
             calc_intro = ""
             if injected_calc_context:

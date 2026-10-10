@@ -428,6 +428,18 @@ public sealed partial class MainPage : Page
     public static Brush StatusStrokeBrush(bool online) => online ? BluePillStroke : TransparentBrush;
     public static Brush StatusTextBrush(bool online) => online ? GreenText : TextSlate;
     public static string StatusBadgeText(bool online) => online ? "Verified" : "Ready";
+    public static Visibility NavSectionToVisibility(string activeSection, string targetSection) =>
+        string.Equals(activeSection, targetSection, StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;
+
+    public static Visibility NavSectionToInvertVisibility(string activeSection, string targetSection) =>
+        !string.Equals(activeSection, targetSection, StringComparison.OrdinalIgnoreCase) ? Visibility.Visible : Visibility.Collapsed;
+
+    public static Brush NavSectionToActiveBrush(string activeSection, string targetSection) =>
+        string.Equals(activeSection, targetSection, StringComparison.OrdinalIgnoreCase) ? BluePillFill : TransparentBrush;
+
+    public static Brush NavSectionToForegroundBrush(string activeSection, string targetSection) =>
+        string.Equals(activeSection, targetSection, StringComparison.OrdinalIgnoreCase) ? BluePrimary : TextSlate;
+
     public static Microsoft.UI.Xaml.Media.Brush EngineRunningToBrush(bool running) => 
         running ? new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.LimeGreen) 
                 : new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.OrangeRed);
