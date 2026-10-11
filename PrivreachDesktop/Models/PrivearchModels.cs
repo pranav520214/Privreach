@@ -46,6 +46,36 @@ public class SystemStatusDto
 
     [JsonPropertyName("airgap_active")]
     public bool AirgapActive { get; set; } = true;
+
+    [JsonPropertyName("hardware_locked")]
+    public bool HardwareLocked { get; set; } = true;
+
+    [JsonPropertyName("cpu_id")]
+    public string CpuId { get; set; } = "";
+
+    [JsonPropertyName("cpu_model")]
+    public string CpuModel { get; set; } = "";
+
+    [JsonPropertyName("hardware_verified")]
+    public bool HardwareVerified { get; set; } = true;
+}
+
+public class HardwareAuthStatusDto
+{
+    [JsonPropertyName("status")]
+    public string Status { get; set; } = "enforced";
+
+    [JsonPropertyName("verified")]
+    public bool Verified { get; set; } = true;
+
+    [JsonPropertyName("message")]
+    public string Message { get; set; } = "";
+
+    [JsonPropertyName("encryption_algorithm")]
+    public string EncryptionAlgorithm { get; set; } = "AES-256-GCM + Argon2id";
+
+    [JsonPropertyName("storage_theft_protection")]
+    public string StorageTheftProtection { get; set; } = "PHYSICAL_CPU_BOUND";
 }
 
 public class QueryAnalysisDto

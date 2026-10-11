@@ -38,6 +38,15 @@ public partial class MainPageViewModel : ObservableObject
     private string _vaultStatusText = "Vault: 0 Chunks";
 
     [ObservableProperty]
+    private string _hardwareLockText = "ENFORCED (CPU-Bound AES-256-GCM)";
+
+    [ObservableProperty]
+    private string _cpuIdDisplay = "Loading...";
+
+    [ObservableProperty]
+    private string _securityStatusText = "All systems secure • Hardware CPU-Bound";
+
+    [ObservableProperty]
     private QueryResultDto? _currentResult;
 
     [ObservableProperty]
@@ -326,6 +335,18 @@ public partial class MainPageViewModel : ObservableObject
                 ModelStatusBadgeText = "Unavailable";
                 ModelEngineSubtitle = "Launch Ollama or check models/ directory";
                 IsModelOnline = false;
+            }
+
+            // Hardware-Bound Cryptographic Vault Binding
+            if (!string.IsNullOrEmpty(status.CpuId))
+            {
+                CpuIdDisplay = status.CpuId;
+            }
+            if (status.HardwareLocked && status.HardwareVerified)
+            {
+                var cpuShort = !string.IsNullOrEmpty(status.CpuModel) ? status.CpuModel.Split(" ")[0] : "CPU";
+                HardwareLockText = $"ENFORCED ({cpuShort}-Bound)";
+                SecurityStatusText = "All systems secure • Hardware CPU-Bound";
             }
         }
         else

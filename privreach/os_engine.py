@@ -103,65 +103,123 @@ class PrivearchKernel:
         self.cache_dir = os.path.abspath(".privearch_cache")
 
         # Automatically load cached index if available
-        self.load_index()
+        try:
+            self.load_index()
+        except Exception:
+            pass
 
 
     def save_index(self, cache_dir: Optional[str] = None) -> bool:
-        """Persist In-RAM hybrid index to disk for instant zero-latency boot."""
+        """
+        Persist In-RAM hybrid index to disk protected by CPU-bound AES-256-GCM encryption.
+        If the physical storage drive is stolen or detached, data cannot be decrypted
+        without the authorized CPU ID and hardware profile.
+        """
         target_dir = cache_dir or self.cache_dir
         os.makedirs(target_dir, exist_ok=True)
 
         if not self.bm25.chunks or self.vector_index.vectors is None:
             return False
 
+        import io
         import json
         import numpy as np
+        from privreach.compute.hardware_auth import HardwareBoundAuth
 
-        # 1. Save chunks
+        # 1. Encrypt and save chunks
         chunks_data = [c.model_dump() for c in self.bm25.chunks]
-        with open(os.path.join(target_dir, "chunks.json"), "w", encoding="utf-8") as f:
-            json.dump(chunks_data, f, ensure_ascii=False)
+        chunks_json_bytes = json.dumps(chunks_data, ensure_ascii=False).encode("utf-8")
+        enc_chunks = HardwareBoundAuth.encrypt_data(chunks_json_bytes)
+        with open(os.path.join(target_dir, "chunks.vault"), "wb") as f:
+            f.write(enc_chunks)
 
-        # 2. Save vectors
-        np.save(os.path.join(target_dir, "vectors.npy"), self.vector_index.vectors)
+        # 2. Encrypt and save vectors
+        vec_buf = io.BytesIO()
+        np.save(vec_buf, self.vector_index.vectors)
+        enc_vectors = HardwareBoundAuth.encrypt_data(vec_buf.getvalue())
+        with open(os.path.join(target_dir, "vectors.vault"), "wb") as f:
+            f.write(enc_vectors)
 
-        # 3. Save manifest
+        # 3. Encrypt and save manifest with hardware profile stamp
+        hw_prof = HardwareBoundAuth.get_hardware_profile()
         manifest = {
             "total_chunks": self.total_chunks,
             "ingested_files": self.ingested_files,
             "embedding_dimension": self.vector_index.dimension,
-            "embedding_backend": self.config.embedding_backend
+            "embedding_backend": self.config.embedding_backend,
+            "hardware_bound": True,
+            "cpu_id": hw_prof.get("cpu_id", ""),
+            "cpu_name": hw_prof.get("cpu_name", ""),
+            "system_uuid": hw_prof.get("system_uuid", ""),
         }
-        with open(os.path.join(target_dir, "manifest.json"), "w", encoding="utf-8") as f:
-            json.dump(manifest, f, indent=2, ensure_ascii=False)
+        manifest_json_bytes = json.dumps(manifest, indent=2, ensure_ascii=False).encode("utf-8")
+        enc_manifest = HardwareBoundAuth.encrypt_data(manifest_json_bytes)
+        with open(os.path.join(target_dir, "manifest.vault"), "wb") as f:
+            f.write(enc_manifest)
 
-        # 4. Save Knowledge Graph
+        # Remove legacy unencrypted files if present to prevent plaintext leakage on disk
+        for fname in ["chunks.json", "vectors.npy", "manifest.json"]:
+            fpath = os.path.join(target_dir, fname)
+            if os.path.isfile(fpath):
+                try:
+                    os.remove(fpath)
+                except Exception:
+                    pass
+
+        # 4. Save Knowledge Graph with hardware-bound encryption
         self.graph_engine.save_to_dir(target_dir)
 
         return True
 
     def load_index(self, cache_dir: Optional[str] = None) -> bool:
-        """Load pre-indexed knowledge vault into RAM in milliseconds."""
+        """
+        Load pre-indexed knowledge vault into RAM in milliseconds.
+        Enforces CPU-bound cryptographic authorization before decryption.
+        """
         target_dir = cache_dir or self.cache_dir
-        chunks_file = os.path.join(target_dir, "chunks.json")
-        vectors_file = os.path.join(target_dir, "vectors.npy")
-        manifest_file = os.path.join(target_dir, "manifest.json")
+        chunks_vault = os.path.join(target_dir, "chunks.vault")
+        vectors_vault = os.path.join(target_dir, "vectors.vault")
+        manifest_vault = os.path.join(target_dir, "manifest.vault")
 
-        if not (os.path.exists(chunks_file) and os.path.exists(vectors_file) and os.path.exists(manifest_file)):
+        chunks_plain = os.path.join(target_dir, "chunks.json")
+        vectors_plain = os.path.join(target_dir, "vectors.npy")
+        manifest_plain = os.path.join(target_dir, "manifest.json")
+
+        has_vault = os.path.exists(chunks_vault) and os.path.exists(vectors_vault) and os.path.exists(manifest_vault)
+        has_plain = os.path.exists(chunks_plain) and os.path.exists(vectors_plain) and os.path.exists(manifest_plain)
+
+        if not (has_vault or has_plain):
             return False
 
         try:
+            import io
             import json
             import numpy as np
+            from privreach.compute.hardware_auth import HardwareBoundAuth
 
-            with open(manifest_file, "r", encoding="utf-8") as f:
-                manifest = json.load(f)
+            if has_vault:
+                # Decrypt hardware-bound encrypted vault files
+                with open(manifest_vault, "rb") as f:
+                    dec_manifest = HardwareBoundAuth.decrypt_data(f.read())
+                manifest = json.loads(dec_manifest.decode("utf-8"))
 
-            with open(chunks_file, "r", encoding="utf-8") as f:
-                raw_chunks = json.load(f)
+                with open(chunks_vault, "rb") as f:
+                    dec_chunks = HardwareBoundAuth.decrypt_data(f.read())
+                raw_chunks = json.loads(dec_chunks.decode("utf-8"))
+
+                with open(vectors_vault, "rb") as f:
+                    dec_vectors = HardwareBoundAuth.decrypt_data(f.read())
+                vec_buf = io.BytesIO(dec_vectors)
+                vectors = np.load(vec_buf)
+            else:
+                # Fallback for legacy unencrypted indexes: load and transparently migrate to encrypted vault
+                with open(manifest_plain, "r", encoding="utf-8") as f:
+                    manifest = json.load(f)
+                with open(chunks_plain, "r", encoding="utf-8") as f:
+                    raw_chunks = json.load(f)
+                vectors = np.load(vectors_plain)
 
             chunks = [DocumentChunk(**c) for c in raw_chunks]
-            vectors = np.load(vectors_file)
 
             # Clear current and populate in-RAM
             self.bm25.clear()
@@ -176,7 +234,18 @@ class PrivearchKernel:
 
             self.ingested_files = manifest.get("ingested_files", [])
             self.total_chunks = len(chunks)
+
+            # If legacy unencrypted data was loaded, immediately migrate to hardware-bound encrypted vault
+            if not has_vault and has_plain:
+                try:
+                    self.save_index(target_dir)
+                except Exception:
+                    pass
+
             return True
+        except PermissionError as pe:
+            print(f"[SECURITY ALERT] Hardware authorization failed: {pe}")
+            raise pe
         except Exception as e:
             print(f"[Warning] Failed to load index cache: {e}")
             return False
@@ -195,7 +264,10 @@ class PrivearchKernel:
         if delete_cache_files:
             for cdir in [self.cache_dir, os.path.abspath(".privreach_cache"), os.path.abspath(".privearch_cache")]:
                 if os.path.exists(cdir):
-                    for fname in ["chunks.json", "vectors.npy", "manifest.json", "graph.json"]:
+                    for fname in [
+                        "chunks.json", "vectors.npy", "manifest.json", "graph.json",
+                        "chunks.vault", "vectors.vault", "manifest.vault", "graph.vault"
+                    ]:
                         fpath = os.path.join(cdir, fname)
                         if os.path.isfile(fpath):
                             try:
@@ -746,4 +818,9 @@ class PrivearchKernel:
             "cross_document_bridges": len(self.graph_engine.bridges),
             "communities_count": len(self.graph_engine.communities)
         }
+
+
+# Canonical name alias
+PrivreachKernel = PrivearchKernel
+
 

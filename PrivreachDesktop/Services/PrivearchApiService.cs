@@ -38,6 +38,18 @@ public class PrivearchApiService
         }
     }
 
+    public async Task<HardwareAuthStatusDto?> GetHardwareAuthAsync()
+    {
+        try
+        {
+            return await _httpClient.GetFromJsonAsync<HardwareAuthStatusDto>("/api/security/hardware-auth").ConfigureAwait(false);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public async Task<QueryResultDto?> QueryAsync(string query, bool deepThinking = true)
     {
         try

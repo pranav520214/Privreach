@@ -370,7 +370,7 @@
                                            FontSize="11"
                                            FontWeight="SemiBold"
                                            Foreground="{StaticResource TextNavyPrimaryBrush}" />
-                                <TextBlock Text="All systems secure • Air-Gapped"
+                                <TextBlock Text="{x:Bind ViewModel.SecurityStatusText, Mode=OneWay}"
                                            FontSize="10"
                                            Foreground="{StaticResource TextSlateSecondaryBrush}" />
                             </StackPanel>
@@ -1730,6 +1730,8 @@
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
                                 <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
                             </Grid.RowDefinitions>
                             <TextBlock Grid.Row="0" Grid.Column="0" Text="External Network Egress Block:" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
                             <Border Grid.Row="0" Grid.Column="1" Background="{StaticResource StatusGreenFillBrush}" CornerRadius="4" Padding="8,2">
@@ -1745,6 +1747,14 @@
                             <Border Grid.Row="2" Grid.Column="1" Background="{StaticResource AccentBluePillFillBrush}" CornerRadius="4" Padding="8,2">
                                 <TextBlock Text="GGUF / Ollama CPU+GPU" FontSize="10" FontWeight="Bold" Foreground="{StaticResource AccentBluePrimaryBrush}" />
                             </Border>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Text="Hardware-Bound Drive Security:" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <Border Grid.Row="3" Grid.Column="1" Background="{StaticResource StatusGreenFillBrush}" CornerRadius="4" Padding="8,2">
+                                <TextBlock Text="{x:Bind ViewModel.HardwareLockText, Mode=OneWay}" FontSize="10" FontWeight="Bold" Foreground="{StaticResource StatusGreenBrush}" />
+                            </Border>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Text="Authorized Processor CPU ID:" FontSize="12" Foreground="{StaticResource TextNavyPrimaryBrush}" />
+                            <TextBlock Grid.Row="4" Grid.Column="1" Text="{x:Bind ViewModel.CpuIdDisplay, Mode=OneWay}" FontSize="11" FontFamily="Consolas, Cascadia Code" Foreground="{StaticResource TextNavyMutedBrush}" HorizontalAlignment="Right" />
                         </Grid>
                     </StackPanel>
                 </Border>

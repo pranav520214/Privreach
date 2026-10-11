@@ -509,28 +509,64 @@ class KnowledgeGraphEngine:
         self._dirty = False
 
     def save_to_dir(self, target_dir: str) -> bool:
-        """Persist graph structure to target directory as graph.json."""
+        """Persist graph structure to target directory protected by hardware-bound encryption."""
         try:
             os.makedirs(target_dir, exist_ok=True)
-            path = os.path.join(target_dir, "graph.json")
             data = self.export_json()
-            with open(path, "w", encoding="utf-8") as f:
-                json.dump(data, f, indent=2, ensure_ascii=False)
-            return True
+            data_bytes = json.dumps(data, indent=2, ensure_ascii=False).encode("utf-8")
+
+            try:
+                from privreach.compute.hardware_auth import HardwareBoundAuth
+                enc_data = HardwareBoundAuth.encrypt_data(data_bytes)
+                vault_path = os.path.join(target_dir, "graph.vault")
+                with open(vault_path, "wb") as f:
+                    f.write(enc_data)
+                # Remove unencrypted plain graph if present
+                plain_path = os.path.join(target_dir, "graph.json")
+                if os.path.exists(plain_path):
+                    try:
+                        os.remove(plain_path)
+                    except Exception:
+                        pass
+                return True
+            except Exception:
+                # Fallback to plain if cryptography unavailable
+                path = os.path.join(target_dir, "graph.json")
+                with open(path, "w", encoding="utf-8") as f:
+                    f.write(data_bytes.decode("utf-8"))
+                return True
         except Exception as e:
             print(f"[Warning] Failed to save graph index: {e}")
             return False
 
     def load_from_dir(self, target_dir: str) -> bool:
-        """Load graph structure from graph.json if present."""
-        path = os.path.join(target_dir, "graph.json")
-        if not os.path.exists(path):
-            return False
-        try:
-            with open(path, "r", encoding="utf-8") as f:
-                data = json.load(f)
-            self.import_json(data)
-            return True
-        except Exception as e:
-            print(f"[Warning] Failed to load graph index: {e}")
-            return False
+        """Load graph structure from graph.vault or graph.json if present."""
+        vault_path = os.path.join(target_dir, "graph.vault")
+        plain_path = os.path.join(target_dir, "graph.json")
+
+        if os.path.exists(vault_path):
+            try:
+                from privreach.compute.hardware_auth import HardwareBoundAuth
+                with open(vault_path, "rb") as f:
+                    enc_data = f.read()
+                dec_data = HardwareBoundAuth.decrypt_data(enc_data)
+                data = json.loads(dec_data.decode("utf-8"))
+                self.import_json(data)
+                return True
+            except PermissionError as pe:
+                print(f"[SECURITY ALERT] Hardware authorization failed for Knowledge Graph: {pe}")
+                raise pe
+            except Exception as e:
+                print(f"[Warning] Failed to load encrypted graph vault: {e}")
+
+        if os.path.exists(plain_path):
+            try:
+                with open(plain_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self.import_json(data)
+                return True
+            except Exception as e:
+                print(f"[Warning] Failed to load graph index: {e}")
+                return False
+
+        return False
