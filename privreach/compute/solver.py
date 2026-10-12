@@ -11,7 +11,7 @@ from sympy.parsing.sympy_parser import (
 )
 
 from privearch.schemas import CalculationVerification, VerificationStatus
-from privearch.compute.equation_parser import EquationParser
+from privreach.compute.equation_parser import EquationParser
 from privearch.tools.python_sandbox import PythonSandboxAdapter
 
 

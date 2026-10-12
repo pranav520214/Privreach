@@ -245,6 +245,143 @@ public class PrivearchApiService
         }
     }
 
+    // ========================================================
+    // SUBSYSTEM 1: INGRESS (Academic Paper Harvester)
+    // ========================================================
+    public async Task<HarvestResponseDto?> HarvestAsync(string query, int maxPapers = 15, bool downloadPdfs = false)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/ingress/harvest", new
+            {
+                query,
+                max_papers = maxPapers,
+                download_priority_pdfs = downloadPdfs
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<HarvestResponseDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new HarvestResponseDto { Success = false, Error = ex.Message };
+        }
+    }
+
+    // ========================================================
+    // SUBSYSTEM 2: AIRLOCK (Content Disarm & Reconstruction)
+    // ========================================================
+    public async Task<AirlockResponseDto?> ProcessAirlockAsync(string filePath, bool forceFlatten = false, bool autoIngest = true)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/airlock/process", new
+            {
+                file_path = filePath,
+                force_visual_flatten = forceFlatten,
+                auto_ingest_into_vault = autoIngest
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<AirlockResponseDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new AirlockResponseDto { Success = false, Error = ex.Message };
+        }
+    }
+
+    // ========================================================
+    // SUBSYSTEM 3: PROVER (Zero-Hallucination Grounding Gate)
+    // ========================================================
+    public async Task<ProverResponseDto?> VerifyProverAsync(string text, bool strictMode = true)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/prover/verify", new
+            {
+                text,
+                strict_mode = strictMode
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<ProverResponseDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new ProverResponseDto { Success = false, Error = ex.Message };
+        }
+    }
+
+    // ========================================================
+    // SUBSYSTEM 4: DISCOVERY (Swanson ABC & Equation Isomorphism)
+    // ========================================================
+    public async Task<SwansonResponseDto?> DiscoverSwansonAsync(string entityA, string? entityC = null, int topK = 10)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/discovery/swanson", new
+            {
+                entity_a = entityA,
+                entity_c = entityC ?? "",
+                top_k = topK
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<SwansonResponseDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new SwansonResponseDto { Success = false, Error = ex.Message };
+        }
+    }
+
+    public async Task<IsomorphismResponseDto?> DetectIsomorphismsAsync(object equations)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/discovery/isomorphisms", new
+            {
+                equations
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<IsomorphismResponseDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new IsomorphismResponseDto { Success = false, Error = ex.Message };
+        }
+    }
+
+    // ========================================================
+    // SUBSYSTEM 8: GENERATIVE CAD & FEA SIMULATION
+    // ========================================================
+    public async Task<CadGenerateResponseDto?> GenerateCadAsync(
+        string componentType = "mounting_bracket",
+        double lengthMm = 80.0,
+        double widthMm = 40.0,
+        double thicknessMm = 5.0,
+        double loadN = 100.0,
+        string material = "aluminum_6061_t6",
+        bool simulateFea = true)
+    {
+        try
+        {
+            var res = await _httpClient.PostAsJsonAsync("/api/cad/generate", new
+            {
+                component_type = componentType,
+                length_mm = lengthMm,
+                width_mm = widthMm,
+                thickness_mm = thicknessMm,
+                load_n = loadN,
+                material,
+                simulate_fea = simulateFea
+            }).ConfigureAwait(false);
+
+            return await res.Content.ReadFromJsonAsync<CadGenerateResponseDto>().ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            return new CadGenerateResponseDto { Success = false, Error = ex.Message };
+        }
+    }
+
     public void EnsureServerProcessRunning()
     {
         Task.Run(EnsureServerProcessRunningAsync);

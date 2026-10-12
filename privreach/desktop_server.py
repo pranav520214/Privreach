@@ -664,6 +664,170 @@ async def api_security_hardware_auth(request: Request) -> JSONResponse:
     })
 
 
+async def api_ingress_harvest(request: Request) -> JSONResponse:
+    """Execute deterministic academic paper harvesting across arXiv, OpenAlex, and CrossRef."""
+    try:
+        body = await request.json()
+        query = body.get("query", "").strip()
+        if not query:
+            return JSONResponse({"success": False, "error": "Query parameter is required"}, status_code=400)
+        max_papers = int(body.get("max_papers", 15))
+        download_pdfs = bool(body.get("download_priority_pdfs", False))
+
+        from privreach.ingress import AcademicHarvester
+        harvester = AcademicHarvester()
+        manifest = await harvester.harvest_async(
+            query=query,
+            max_papers_per_source=max_papers,
+            download_priority_pdfs=download_pdfs,
+        )
+        return JSONResponse({
+            "success": True,
+            "manifest": manifest.model_dump(),
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+async def api_airlock_process(request: Request) -> JSONResponse:
+    """Execute Content Disarm & Reconstruction (CDR) on a quarantined document."""
+    try:
+        body = await request.json()
+        file_path = body.get("file_path", "").strip()
+        force_flatten = bool(body.get("force_visual_flatten", False))
+        auto_ingest = bool(body.get("auto_ingest_into_vault", True))
+
+        if not file_path or not os.path.exists(file_path):
+            return JSONResponse({"success": False, "error": f"File not found: {file_path}"}, status_code=404)
+
+        from privreach.airlock import CDRPipeline
+        pipeline = CDRPipeline()
+        cdr_res = pipeline.process_file(file_path, force_visual_flatten=force_flatten)
+
+        ingest_res = None
+        if cdr_res.is_cleared and auto_ingest and cdr_res.vault_dest_path:
+            kernel = get_kernel()
+            ingest_res = kernel.ingest_pdf(cdr_res.vault_dest_path)
+
+        return JSONResponse({
+            "success": True,
+            "cdr_result": cdr_res.model_dump(),
+            "ingest_result": ingest_res,
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+async def api_prover_verify(request: Request) -> JSONResponse:
+    """Verify an assertion against the local knowledge vault using GroundingGate."""
+    try:
+        body = await request.json()
+        text = body.get("text", "").strip()
+        if not text:
+            return JSONResponse({"success": False, "error": "Text parameter is required"}, status_code=400)
+        strict_mode = bool(body.get("strict_mode", True))
+
+        kernel = get_kernel()
+        evidence_chunks = kernel.bm25.chunks
+
+        from privreach.prover import GroundingGate
+        gate = GroundingGate(strict_mode=strict_mode)
+        proof = gate.verify_and_gate(text, evidence_chunks)
+
+        return JSONResponse({
+            "success": True,
+            "proof_report": proof.model_dump(),
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+async def api_discovery_swanson(request: Request) -> JSONResponse:
+    """Execute Swanson ABC literature discovery over the vault knowledge graph."""
+    try:
+        body = await request.json()
+        entity_a = body.get("entity_a", "").strip()
+        entity_c = body.get("entity_c", "").strip()
+
+        if not entity_a:
+            return JSONResponse({"success": False, "error": "entity_a is required"}, status_code=400)
+
+        kernel = get_kernel()
+        from privreach.discovery import SwansonDiscoveryEngine
+        engine = SwansonDiscoveryEngine(kernel.graph_engine.graph)
+
+        if entity_c:
+            report = engine.closed_discovery(entity_a, entity_c)
+        else:
+            report = engine.open_discovery(entity_a, top_k=int(body.get("top_k", 10)))
+
+        return JSONResponse({"success": True, "report": report.model_dump()})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+async def api_discovery_isomorphisms(request: Request) -> JSONResponse:
+    """Detect cross-domain mathematical AST isomorphisms."""
+    try:
+        body = await request.json()
+        equations = body.get("equations", [])
+
+        from privreach.discovery import EquationIsomorphismEngine
+        engine = EquationIsomorphismEngine()
+
+        for eq in equations:
+            engine.register_equation(
+                name=eq.get("name", "Unknown"),
+                expression_str=eq.get("expression", ""),
+                domain=eq.get("domain", "general"),
+            )
+
+        report = engine.detect_isomorphisms()
+        return JSONResponse({"success": True, "report": report.model_dump()})
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+async def api_cad_generate(request: Request) -> JSONResponse:
+    """Synthesize parametric CadQuery script, validate manifold geometry, and simulate FEA."""
+    try:
+        body = await request.json()
+        comp_type = body.get("component_type", "mounting_bracket")
+        load_n = float(body.get("load_n", 100.0))
+        simulate_fea = bool(body.get("simulate_fea", True))
+
+        from privreach.cad import CadQueryGenerator, SandboxCADExecutor, FEARunner
+        cad_gen = CadQueryGenerator()
+        sandbox = SandboxCADExecutor()
+
+        length = float(body.get("length_mm", 80.0))
+        width = float(body.get("width_mm", 40.0))
+        thickness = float(body.get("thickness_mm", 5.0))
+
+        if comp_type == "l_bracket":
+            cad_res = cad_gen.generate_l_bracket(leg_length_a=length, leg_length_b=width, width=30.0, thickness=thickness)
+        else:
+            cad_res = cad_gen.generate_mounting_bracket(length_mm=length, width_mm=width, thickness_mm=thickness)
+
+        geom_val = sandbox.validate_analytical_box(length, width, thickness)
+
+        fea_res = None
+        if simulate_fea:
+            fea_runner = FEARunner(material_key=body.get("material", "aluminum_6061_t6"))
+            fea_res = fea_runner.simulate_cantilever_bracket(length, width, thickness, load_force_n=load_n).model_dump()
+
+        return JSONResponse({
+            "success": True,
+            "cad_script": cad_res.model_dump(),
+            "geometry_validation": geom_val.model_dump(),
+            "fea_simulation": fea_res,
+        })
+    except Exception as e:
+        return JSONResponse({"success": False, "error": str(e)}, status_code=500)
+
+
+
+
 routes = [
     Route("/api/status", api_status, methods=["GET"]),
     Route("/api/documents", api_documents, methods=["GET"]),
@@ -679,6 +843,14 @@ routes = [
     Route("/api/compute/solve", api_compute_solve, methods=["POST"]),
     Route("/api/artifacts", api_artifacts, methods=["GET"]),
     Route("/api/security/hardware-auth", api_security_hardware_auth, methods=["GET"]),
+    # Academic Ingress, Airlock CDR & Zero-Hallucination Prover Endpoints
+    Route("/api/ingress/harvest", api_ingress_harvest, methods=["POST"]),
+    Route("/api/airlock/process", api_airlock_process, methods=["POST"]),
+    Route("/api/prover/verify", api_prover_verify, methods=["POST"]),
+    # Hidden Discovery & Generative CAD Endpoints
+    Route("/api/discovery/swanson", api_discovery_swanson, methods=["POST"]),
+    Route("/api/discovery/isomorphisms", api_discovery_isomorphisms, methods=["POST"]),
+    Route("/api/cad/generate", api_cad_generate, methods=["POST"]),
     # Modern Updater Endpoints
     Route("/api/updater/status", api_updater_status, methods=["GET"]),
     Route("/api/updater/check", api_updater_check, methods=["POST"]),

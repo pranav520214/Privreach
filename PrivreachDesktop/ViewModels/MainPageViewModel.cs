@@ -241,6 +241,134 @@ public partial class MainPageViewModel : ObservableObject
     public ObservableCollection<string> AvailableModels { get; } = new();
     public ObservableCollection<ArtifactDto> Artifacts { get; } = new();
 
+    // Academic Ingress Properties & Collections
+    [ObservableProperty]
+    private string _harvestQueryText = "supercritical airfoil transonic buffet aerodynamics";
+
+    [ObservableProperty]
+    private bool _isHarvesting = false;
+
+    [ObservableProperty]
+    private string _harvestStatusText = "Ready to harvest from arXiv, OpenAlex, CrossRef";
+
+    [ObservableProperty]
+    private int _harvestTotalPapers = 0;
+
+    [ObservableProperty]
+    private int _harvestPriorityCount = 0;
+
+    [ObservableProperty]
+    private int _harvestArchiveCount = 0;
+
+    public ObservableCollection<ManifestEntryDto> HarvestEntries { get; } = new();
+
+    // Airlock CDR Properties & Collections
+    [ObservableProperty]
+    private string _airlockFilePath = "";
+
+    [ObservableProperty]
+    private bool _isAirlockProcessing = false;
+
+    [ObservableProperty]
+    private bool _airlockCleared = false;
+
+    [ObservableProperty]
+    private string _airlockSourceHash = "";
+
+    [ObservableProperty]
+    private string _airlockSanitizedHash = "";
+
+    [ObservableProperty]
+    private string _airlockStatusText = "Airlock Ready • Zero-Trust CDR Active";
+
+    [ObservableProperty]
+    private bool _airlockForceFlatten = false;
+
+    public ObservableCollection<string> AirlockAuditLogs { get; } = new();
+
+    // Zero-Hallucination Prover Properties & Collections
+    [ObservableProperty]
+    private string _proverInputText = "The NACA 64-416 airfoil maintains laminar boundary layer flow up to Mach 0.78, delaying shock wave formation.";
+
+    [ObservableProperty]
+    private bool _isProverAuditing = false;
+
+    [ObservableProperty]
+    private double _proverGroundingRatio = 0.0;
+
+    [ObservableProperty]
+    private string _proverGroundingRatioText = "0% Grounded";
+
+    [ObservableProperty]
+    private string _proverVerifiedText = "";
+
+    [ObservableProperty]
+    private bool _proverStrictVerification = false;
+
+    public ObservableCollection<ClaimVerificationDto> ProverClaims { get; } = new();
+
+    // Hidden Discovery & Isomorphisms
+    [ObservableProperty]
+    private string _swansonEntityA = "Migraine";
+
+    [ObservableProperty]
+    private string _swansonEntityC = "Magnesium";
+
+    [ObservableProperty]
+    private bool _isSwansonSearching = false;
+
+    [ObservableProperty]
+    private string _swansonSummaryText = "Ready to discover hidden A ⟷ B ⟷ C connections";
+
+    public ObservableCollection<DiscoveryCandidateDto> SwansonCandidates { get; } = new();
+    public ObservableCollection<IsomorphismClusterDto> IsomorphismClusters { get; } = new();
+
+    // CAD Studio & FEA Simulation
+    [ObservableProperty]
+    private string _cadComponentType = "mounting_bracket";
+
+    [ObservableProperty]
+    private double _cadLengthMm = 80.0;
+
+    [ObservableProperty]
+    private double _cadWidthMm = 40.0;
+
+    [ObservableProperty]
+    private double _cadThicknessMm = 5.0;
+
+    [ObservableProperty]
+    private double _cadLoadN = 250.0;
+
+    [ObservableProperty]
+    private string _cadMaterial = "aluminum_6061_t6";
+
+    [ObservableProperty]
+    private string _cadScriptCode = "";
+
+    [ObservableProperty]
+    private double _cadVolumeMm3 = 0.0;
+
+    [ObservableProperty]
+    private double _feaStressMpa = 0.0;
+
+    [ObservableProperty]
+    private double _feaYieldMpa = 276.0;
+
+    [ObservableProperty]
+    private double _feaDeflectionMm = 0.0;
+
+    [ObservableProperty]
+    private double _feaFos = 0.0;
+
+    [ObservableProperty]
+    private bool _feaIsSafe = true;
+
+    [ObservableProperty]
+    private string _feaSummaryText = "FEA Simulation Ready";
+
+    [ObservableProperty]
+    private bool _isCadGenerating = false;
+
     // Interactive SymPy Equation Solver properties
     [ObservableProperty]
     private string _solveEquationText = "P * V = n * R * T";
@@ -873,6 +1001,255 @@ public partial class MainPageViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusMessage = $"Sample loading error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExecuteHarvestAsync()
+    {
+        if (IsHarvesting || string.IsNullOrWhiteSpace(HarvestQueryText)) return;
+        IsHarvesting = true;
+        HarvestStatusText = "Harvesting academic papers across arXiv, OpenAlex & CrossRef...";
+        StatusMessage = HarvestStatusText;
+        try
+        {
+            var res = await _api.HarvestAsync(HarvestQueryText.Trim(), maxPapers: 10, downloadPdfs: false);
+            if (res != null && res.Success && res.Manifest != null)
+            {
+                HarvestTotalPapers = res.Manifest.TotalPapers;
+                HarvestPriorityCount = res.Manifest.PriorityCount;
+                HarvestArchiveCount = res.Manifest.ArchiveCount;
+                HarvestStatusText = $"Harvested {HarvestTotalPapers} papers ({HarvestPriorityCount} Priority, {HarvestArchiveCount} Archive)";
+
+                HarvestEntries.Clear();
+                foreach (var e in res.Manifest.Entries)
+                {
+                    HarvestEntries.Add(e);
+                }
+                StatusMessage = HarvestStatusText;
+            }
+            else
+            {
+                HarvestStatusText = $"Harvest Error: {res?.Error ?? "Harvester failed"}";
+                StatusMessage = HarvestStatusText;
+            }
+        }
+        catch (Exception ex)
+        {
+            HarvestStatusText = $"Harvest Error: {ex.Message}";
+            StatusMessage = HarvestStatusText;
+        }
+        finally
+        {
+            IsHarvesting = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ProcessAirlockDocumentAsync()
+    {
+        if (IsAirlockProcessing || string.IsNullOrWhiteSpace(AirlockFilePath)) return;
+        IsAirlockProcessing = true;
+        AirlockStatusText = "Airlock CDR: Sanitizing active content & running injection filters...";
+        StatusMessage = AirlockStatusText;
+        try
+        {
+            var res = await _api.ProcessAirlockAsync(AirlockFilePath.Trim(), forceFlatten: AirlockForceFlatten, autoIngest: true);
+            if (res != null && res.Success && res.CdrResult != null)
+            {
+                AirlockCleared = res.CdrResult.IsCleared;
+                AirlockSourceHash = res.CdrResult.SourceSha256;
+                AirlockSanitizedHash = res.CdrResult.SanitizedSha256 ?? res.CdrResult.SourceSha256;
+                AirlockStatusText = AirlockCleared 
+                    ? "✓ AIRLOCK CLEARED: Document sanitized and safely admitted to vault" 
+                    : "❌ AIRLOCK REJECTED: Malicious polyglot or exploit detected";
+
+                AirlockAuditLogs.Clear();
+                foreach (var log in res.CdrResult.AuditLog)
+                {
+                    AirlockAuditLogs.Add(log);
+                }
+                await RefreshDocumentsAsync();
+                StatusMessage = AirlockStatusText;
+            }
+            else
+            {
+                AirlockStatusText = $"Airlock Error: {res?.Error ?? "Sanitization failed"}";
+                StatusMessage = AirlockStatusText;
+            }
+        }
+        catch (Exception ex)
+        {
+            AirlockStatusText = $"Airlock Error: {ex.Message}";
+            StatusMessage = AirlockStatusText;
+        }
+        finally
+        {
+            IsAirlockProcessing = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task AuditClaimsWithProverAsync()
+    {
+        if (IsProverAuditing || string.IsNullOrWhiteSpace(ProverInputText)) return;
+        IsProverAuditing = true;
+        StatusMessage = "Auditing text claims with GroundingGate exact span prover...";
+        try
+        {
+            var res = await _api.VerifyProverAsync(ProverInputText.Trim(), strictMode: true);
+            if (res != null && res.Success && res.ProofReport != null)
+            {
+                ProverGroundingRatio = res.ProofReport.GroundingRatio * 100.0;
+                ProverGroundingRatioText = $"{ProverGroundingRatio:F1}% Grounded";
+                ProverVerifiedText = res.ProofReport.VerifiedText;
+                ProverStrictVerification = res.ProofReport.IsStrictlyVerified;
+
+                ProverClaims.Clear();
+                foreach (var c in res.ProofReport.Claims)
+                {
+                    ProverClaims.Add(c);
+                }
+                StatusMessage = $"Prover Audit Complete: {res.ProofReport.VerifiedClaims}/{res.ProofReport.TotalClaims} Verified ({ProverGroundingRatioText})";
+            }
+            else
+            {
+                StatusMessage = $"Prover Error: {res?.Error ?? "Proof verification failed"}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Prover Error: {ex.Message}";
+        }
+        finally
+        {
+            IsProverAuditing = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExecuteSwansonDiscoveryAsync()
+    {
+        if (IsSwansonSearching || string.IsNullOrWhiteSpace(SwansonEntityA)) return;
+        IsSwansonSearching = true;
+        SwansonSummaryText = "Evaluating graph triads for Swanson ABC literature connections...";
+        StatusMessage = SwansonSummaryText;
+        try
+        {
+            var res = await _api.DiscoverSwansonAsync(SwansonEntityA.Trim(), string.IsNullOrWhiteSpace(SwansonEntityC) ? null : SwansonEntityC.Trim(), topK: 10);
+            if (res != null && res.Success && res.Report != null)
+            {
+                SwansonSummaryText = $"Found {res.Report.Candidates.Count} candidate hypotheses ({res.Report.TotalTriadsEvaluated} triads evaluated)";
+                SwansonCandidates.Clear();
+                foreach (var c in res.Report.Candidates)
+                {
+                    SwansonCandidates.Add(c);
+                }
+                StatusMessage = SwansonSummaryText;
+            }
+            else
+            {
+                SwansonSummaryText = $"Discovery Error: {res?.Error ?? "No triads found"}";
+                StatusMessage = SwansonSummaryText;
+            }
+        }
+        catch (Exception ex)
+        {
+            SwansonSummaryText = $"Discovery Error: {ex.Message}";
+            StatusMessage = SwansonSummaryText;
+        }
+        finally
+        {
+            IsSwansonSearching = false;
+        }
+    }
+
+    [RelayCommand]
+    public async Task ExecuteEquationIsomorphismAsync()
+    {
+        StatusMessage = "Analyzing mathematical AST structures for cross-domain isomorphisms...";
+        try
+        {
+            var sampleEquations = new object[]
+            {
+                new { name = "Newton Gravitation", expression = "G * m1 * m2 / r**2", domain = "Astrophysics" },
+                new { name = "Coulomb Law", expression = "k * q1 * q2 / r**2", domain = "Electromagnetism" },
+                new { name = "Fourier Heat Conduction", expression = "-k * A * dT / dx", domain = "Thermodynamics" },
+                new { name = "Fick First Law", expression = "-D * A * dC / dx", domain = "Diffusion Chemistry" }
+            };
+
+            var res = await _api.DetectIsomorphismsAsync(sampleEquations);
+            if (res != null && res.Success && res.Report != null)
+            {
+                IsomorphismClusters.Clear();
+                foreach (var c in res.Report.CrossDomainDiscoveries)
+                {
+                    IsomorphismClusters.Add(c);
+                }
+                StatusMessage = $"Isomorphism Discovery: {res.Report.TotalIsomorphicClusters} structural analogies detected across domains";
+            }
+            else
+            {
+                StatusMessage = $"Isomorphism Error: {res?.Error ?? "Detection failed"}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Isomorphism Error: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public async Task GenerateCadAndSimulateAsync()
+    {
+        if (IsCadGenerating) return;
+        IsCadGenerating = true;
+        StatusMessage = "Synthesizing Parametric CadQuery script & executing FEA stress simulation...";
+        try
+        {
+            var res = await _api.GenerateCadAsync(
+                componentType: CadComponentType,
+                lengthMm: CadLengthMm,
+                widthMm: CadWidthMm,
+                thicknessMm: CadThicknessMm,
+                loadN: CadLoadN,
+                material: CadMaterial,
+                simulateFea: true
+            );
+
+            if (res != null && res.Success)
+            {
+                if (res.CadScript != null)
+                {
+                    CadScriptCode = res.CadScript.ScriptCode;
+                }
+                if (res.GeometryValidation != null)
+                {
+                    CadVolumeMm3 = res.GeometryValidation.VolumeMm3;
+                }
+                if (res.FeaSimulation != null)
+                {
+                    FeaStressMpa = res.FeaSimulation.MaxVonMisesStressMpa;
+                    FeaYieldMpa = res.FeaSimulation.YieldStrengthMpa;
+                    FeaDeflectionMm = res.FeaSimulation.MaxDeflectionMm;
+                    FeaFos = res.FeaSimulation.FactorOfSafety;
+                    FeaIsSafe = res.FeaSimulation.IsStructurallySafe;
+                    FeaSummaryText = res.FeaSimulation.Summary;
+                }
+                StatusMessage = $"CAD Synthesis & FEA Complete: FoS = {FeaFos:F2} ({(FeaIsSafe ? "STRUCTURALLY SOUND" : "YIELD RISK")})";
+            }
+            else
+            {
+                StatusMessage = $"CAD Generation Error: {res?.Error ?? "Unknown failure"}";
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"CAD Error: {ex.Message}";
+        }
+        finally
+        {
+            IsCadGenerating = false;
         }
     }
 }
